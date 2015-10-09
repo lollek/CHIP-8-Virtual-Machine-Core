@@ -1,6 +1,6 @@
 
 #include "gtest/gtest.h"
-#include "chip8emu/Emulator.h"
+#include "chip8core/Emulator.h"
 
 class EmulatorLoadFileToRam : public ::testing::Test, public Emulator {
 };

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#include "chip8emu/Emulator.h"
+#include "chip8core/Emulator.h"
 
 Emulator::FatalError::FatalError(std::string error_message) :
   std::runtime_error(error_message) {
