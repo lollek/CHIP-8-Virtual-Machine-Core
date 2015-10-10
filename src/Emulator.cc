@@ -340,7 +340,11 @@ void Emulator::handleOpcode(halfword opcode) {
      * take the decimal representation of VX, place the hundreds digit in memory
      * at location in I, the tens digit at location I+1, and the ones digit at
      * location I+2.) */
-    goto not_implemented;
+    unsigned x_register = (opcode & 0x0F00) >> 8;
+    byte value = registers.at(x_register);
+    ram.at(index_register + 0) = value / 100;
+    ram.at(index_register + 1) = value / 10 % 10;
+    ram.at(index_register + 2) = value % 10;
 
   } else if ((opcode & 0xF0FF) == 0xF055) { /* 0xFX55 */
     /* Stores V0 to VX in memory starting at address I */

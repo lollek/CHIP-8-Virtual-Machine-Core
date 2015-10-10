@@ -481,7 +481,19 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX29) {
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
-  ASSERT_THROW(handleOpcode(0xF033), NotImplementedError);
+  index_register = 100;
+  registers.at(0) = 159;
+  ASSERT_EQ(0U, ram.at(index_register + 0));
+  ASSERT_EQ(0U, ram.at(index_register + 1));
+  ASSERT_EQ(0U, ram.at(index_register + 2));
+  handleOpcode(0xF033);
+  ASSERT_EQ(1U, ram.at(index_register + 0));
+  ASSERT_EQ(5U, ram.at(index_register + 1));
+  ASSERT_EQ(9U, ram.at(index_register + 2));
+
+  ram.at(index_register + 0) = 0;
+  ram.at(index_register + 1) = 0;
+  ram.at(index_register + 2) = 0;
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
