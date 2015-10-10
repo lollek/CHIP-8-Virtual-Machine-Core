@@ -9,7 +9,7 @@
 
 using byte       = uint8_t;
 using halfword   = uint16_t;
-using screen_row = uint64_t;
+using screen_row = uint8_t;
 
 class Emulator {
 public:
@@ -17,6 +17,7 @@ public:
   ~Emulator() = default;
 
   std::string const& getError() const;
+  byte const* getGraphicsData() const;
 
   std::function<void()> onSound;
   std::function<void()> onGraphics;
@@ -27,7 +28,9 @@ public:
 
   unsigned static constexpr ram_size = 4096;
   unsigned static constexpr num_registers = 16;
+  unsigned static constexpr screen_columns = 64 / 8;
   unsigned static constexpr screen_rows = 32;
+  unsigned static constexpr screen_bytes = screen_rows * screen_columns;
   unsigned static constexpr stack_size = 16;
   unsigned static constexpr num_keys = 16;
   halfword static constexpr program_counter_start = 0x200;

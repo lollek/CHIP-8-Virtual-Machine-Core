@@ -7,7 +7,7 @@ class EmulatorHandleOpcode : public ::testing::Test, public Emulator {
 
 TEST_F(EmulatorHandleOpcode, OP_0x00E0) {
   for (unsigned i = 0; i < screen.size(); ++i) {
-    screen.at(i) = 1337U;
+    screen.at(i) = 57;
   }
 
   handleOpcode(0x00E0);
@@ -350,7 +350,43 @@ TEST_F(EmulatorHandleOpcode, OP_0xCXNN) {
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
-  ASSERT_THROW(handleOpcode(0xD000), NotImplementedError);
+  ram.at(index_register) = 0x12;
+  ram.at(index_register + 1) = 0x34;
+  ram.at(index_register + 2) = 0x56;
+  ram.at(index_register + 3) = 0x78;
+
+  /* Draw a line at the corner */
+  ASSERT_EQ(0U, screen.at(0));
+  handleOpcode(0xD001);
+  ASSERT_EQ(0x12, screen.at(0));
+  ASSERT_EQ(0, registers.at(0xF));
+
+  /* Drawing the exact same byte should reverse the drawing */
+  handleOpcode(0xD001);
+  ASSERT_EQ(0U, screen.at(0));
+  ASSERT_EQ(1, registers.at(0xF));
+
+  /* Draw a few lines */
+  ASSERT_EQ(0U, screen.at(4 + (1 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (2 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (3 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (4 * screen_rows)));
+  registers.at(0) = 4;
+  registers.at(1) = 1;
+  handleOpcode(0xD014);
+  ASSERT_EQ(0x12, screen.at(4 + (1 * screen_rows)));
+  ASSERT_EQ(0x34, screen.at(4 + (2 * screen_rows)));
+  ASSERT_EQ(0x56, screen.at(4 + (3 * screen_rows)));
+  ASSERT_EQ(0x78, screen.at(4 + (4 * screen_rows)));
+  ASSERT_EQ(0, registers.at(0xF));
+
+  /* Remove them */
+  handleOpcode(0xD014);
+  ASSERT_EQ(0U, screen.at(4 + (1 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (2 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (3 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (4 * screen_rows)));
+  ASSERT_EQ(1, registers.at(0xF));
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xEX9E) {

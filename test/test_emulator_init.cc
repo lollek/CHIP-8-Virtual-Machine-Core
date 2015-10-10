@@ -15,9 +15,11 @@ TEST_F(EmulatorInitialization, Ram) {
 }
 
 TEST_F(EmulatorInitialization, Screen) {
-  ASSERT_EQ(8U, sizeof(screen.at(0)));
+  ASSERT_EQ(1U, sizeof(screen.at(0)));
   ASSERT_EQ(32U, screen_rows);
-  ASSERT_EQ(screen_rows, screen.size());
+  ASSERT_EQ(8U, screen_columns);
+  ASSERT_EQ(screen_rows * screen_columns, screen_bytes);
+  ASSERT_EQ(screen_bytes, screen.size());
   for (unsigned i : screen) {
     ASSERT_EQ(0U, i);
   }

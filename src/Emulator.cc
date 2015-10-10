@@ -17,7 +17,9 @@ Emulator::NotImplementedError::NotImplementedError(std::string error_message) :
 
 unsigned constexpr Emulator::ram_size;
 unsigned constexpr Emulator::num_registers;
+unsigned constexpr Emulator::screen_columns;
 unsigned constexpr Emulator::screen_rows;
+unsigned constexpr Emulator::screen_bytes;
 unsigned constexpr Emulator::stack_size;
 unsigned constexpr Emulator::num_keys;
 halfword constexpr Emulator::program_counter_start;
@@ -28,7 +30,7 @@ Emulator::Emulator() :
   onSound(nullptr),
   onGraphics(nullptr),
   ram(std::vector<byte>(ram_size, 0)),
-  screen(std::vector<screen_row>(screen_rows, 0)),
+  screen(std::vector<screen_row>(screen_bytes, 0)),
   registers(std::vector<byte>(num_registers, 0)),
   index_register(0),
   program_counter(program_counter_start),
@@ -43,6 +45,10 @@ Emulator::Emulator() :
 
 std::string const& Emulator::getError() const {
   return error_msg;
+}
+
+byte const* Emulator::getGraphicsData() const {
+  return screen.data();
 }
 
 bool Emulator::loadFileToRam(std::string const& filename) {
@@ -243,7 +249,19 @@ void Emulator::handleOpcode(halfword opcode) {
      * toggles the screen pixels). Sprites are drawn starting at position VX,
      * VY. N is the number of 8bit rows that need to be drawn. If N is greater
      * than 1, second line continues at position VX, VY+1, and so on. */
-    goto not_implemented;
+    unsigned sprite_x = registers.at((opcode & 0x0F00) >> 8);
+    unsigned sprite_y = registers.at((opcode & 0x00F0) >> 4);
+    unsigned num_rows = opcode & 0x000F;
+    registers.at(0xF) = 0;
+
+    for (unsigned y = 0; y < num_rows; ++y) {
+      byte byte_new = ram.at(index_register + y);
+      byte& byte_old = screen.at(sprite_x + ((sprite_y + y) * screen_rows));
+      if (byte_new & byte_old) {
+        registers.at(0xF) = 1;
+      }
+      byte_old ^= byte_new;
+    }
 
   } else if ((opcode & 0xF0FF) == 0xE09E) { /* 0xEX9E */
     /* Skips the next instruction if the key stored in VX is pressed. */
