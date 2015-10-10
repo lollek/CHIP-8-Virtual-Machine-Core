@@ -473,7 +473,11 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX1E) {
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX29) {
-  ASSERT_THROW(handleOpcode(0xF029), NotImplementedError);
+  for (unsigned i = 0; i < registers.size(); ++i) {
+    registers.at(i) = i;
+    handleOpcode(0xf029 + (i << 8));
+    ASSERT_EQ(5 * i, index_register);
+  }
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
@@ -481,7 +485,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
-  index_register = 0;
+  index_register = 80;
 
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = i + 1;
