@@ -39,7 +39,8 @@ Emulator::Emulator() :
   stack(std::vector<halfword>(stack_size, 0)),
   stack_pointer(0),
   keys_state(std::vector<byte>(num_keys, 0)),
-  error_msg()
+  error_msg(),
+  tick_lock(false)
   {
     srand(time(NULL));
 
@@ -105,7 +106,7 @@ halfword Emulator::fetchOpcode() {
                    + std::to_string(program_counter) + ")");
   }
 
-  halfword opcode = *(reinterpret_cast<halfword *>(&ram[program_counter]));
+  halfword opcode = (ram.at(program_counter) << 8) + ram.at(program_counter +1);
   program_counter = (program_counter + 2) % ram_size;
   return opcode;
 }
@@ -368,7 +369,13 @@ not_implemented:
 }
 
 void Emulator::tick() {
-  handleOpcode(fetchOpcode());
+  if (tick_lock) {
+    return;
+  }
+  tick_lock = true;
+
+  halfword opcode = fetchOpcode();
+  handleOpcode(opcode);
 
   if (delay_timer > 0) {
     --delay_timer;
@@ -379,4 +386,6 @@ void Emulator::tick() {
       onSound();
     }
   }
+
+  tick_lock = false;
 }

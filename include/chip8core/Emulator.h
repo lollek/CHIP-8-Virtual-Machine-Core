@@ -35,12 +35,12 @@ public:
   unsigned static constexpr num_keys = 16;
   halfword static constexpr program_counter_start = 0x200;
 
-  class FatalError : std::runtime_error {
+  class FatalError : public std::runtime_error {
   public:
     FatalError(std::string error_message);
   };
 
-  class NotImplementedError : std::runtime_error {
+  class NotImplementedError : public std::runtime_error {
   public:
     NotImplementedError(std::string error_message);
   };
@@ -62,6 +62,7 @@ protected:
   std::vector<byte>       keys_state;
 
   std::string             error_msg;
+  bool tick_lock;
 };
 
 #endif /* EMULATOR_H */
