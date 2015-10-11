@@ -25,7 +25,7 @@ TEST_F(EmulatorHandleOpcode, OP_0x00EE) {
   ++stack_pointer;
   ASSERT_EQ(0x200U, program_counter);
   handleOpcode(0x00EE);
-  ASSERT_EQ(1339U, program_counter);
+  ASSERT_EQ(1337U, program_counter);
   ASSERT_EQ(0U, stack_pointer);
   ASSERT_EQ(1337U, stack.at(stack_pointer));
 }

@@ -128,7 +128,7 @@ void Emulator::handleOpcode(halfword opcode) {
     if (stack_pointer == 0) {
       throw FatalError("Stack underflow");
     }
-    program_counter = stack.at(--stack_pointer) + 2;
+    program_counter = stack.at(--stack_pointer);
 
   } else if ((opcode & 0xF000) == 0x0000) { /* 0x0NNN */
     /* Calls RCA 1802 program at address NNN. */
