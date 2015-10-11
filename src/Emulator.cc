@@ -74,6 +74,10 @@ byte const* Emulator::getGraphicsData() const {
   return screen.data();
 }
 
+void Emulator::setKeyState(int key_number, bool on) {
+  keys_state.at(key_number) = on ? 0xFF : 0x00;
+}
+
 bool Emulator::loadFileToRam(std::string const& filename) {
   std::ifstream file(filename, std::ios::binary|std::ios::ate);
   ssize_t filesize = file.tellg();

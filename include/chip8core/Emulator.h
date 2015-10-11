@@ -18,6 +18,7 @@ public:
 
   std::string const& getError() const;
   byte const* getGraphicsData() const;
+  void setKeyState(int key_number, bool on);
 
   std::function<void()> onSound;
   std::function<void()> onGraphics;
