@@ -279,7 +279,8 @@ void Emulator::handleOpcode(halfword opcode) {
 
     for (unsigned y = 0; y < num_rows; ++y) {
       byte byte_new = ram.at(index_register + y);
-      byte& byte_old = screen.at(sprite_x + ((sprite_y + y) * screen_rows));
+      unsigned byte_old_pos = sprite_x + ((sprite_y + y) * screen_columns);
+      byte& byte_old = screen.at(byte_old_pos % screen_bytes);
       if (byte_new & byte_old) {
         registers.at(0xF) = 1;
       }

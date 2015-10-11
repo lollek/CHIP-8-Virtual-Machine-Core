@@ -367,25 +367,25 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ASSERT_EQ(1, registers.at(0xF));
 
   /* Draw a few lines */
-  ASSERT_EQ(0U, screen.at(4 + (1 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (2 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (3 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (4 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (4 * screen_columns)));
   registers.at(0) = 4;
   registers.at(1) = 1;
   handleOpcode(0xD014);
-  ASSERT_EQ(0x12, screen.at(4 + (1 * screen_rows)));
-  ASSERT_EQ(0x34, screen.at(4 + (2 * screen_rows)));
-  ASSERT_EQ(0x56, screen.at(4 + (3 * screen_rows)));
-  ASSERT_EQ(0x78, screen.at(4 + (4 * screen_rows)));
+  ASSERT_EQ(0x12, screen.at(4 + (1 * screen_columns)));
+  ASSERT_EQ(0x34, screen.at(4 + (2 * screen_columns)));
+  ASSERT_EQ(0x56, screen.at(4 + (3 * screen_columns)));
+  ASSERT_EQ(0x78, screen.at(4 + (4 * screen_columns)));
   ASSERT_EQ(0, registers.at(0xF));
 
   /* Remove them */
   handleOpcode(0xD014);
-  ASSERT_EQ(0U, screen.at(4 + (1 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (2 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (3 * screen_rows)));
-  ASSERT_EQ(0U, screen.at(4 + (4 * screen_rows)));
+  ASSERT_EQ(0U, screen.at(4 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(4 + (4 * screen_columns)));
   ASSERT_EQ(1, registers.at(0xF));
 }
 
