@@ -287,6 +287,10 @@ void Emulator::handleOpcode(halfword opcode) {
       byte_old ^= byte_new;
     }
 
+    if (onGraphics != nullptr) {
+      onGraphics();
+    }
+
   } else if ((opcode & 0xF0FF) == 0xE09E) { /* 0xEX9E */
     /* Skips the next instruction if the key stored in VX is pressed. */
     unsigned x_register = (opcode & 0x0F00) >> 8;
