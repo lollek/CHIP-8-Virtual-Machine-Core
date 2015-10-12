@@ -21,6 +21,10 @@ TEST_F(EmulatorFetchOpcode, JustPastRam) {
   program_counter = 4096;
   ASSERT_EQ(4096, program_counter);
   ASSERT_THROW(fetchOpcode(), FatalError);
+
+  program_counter = 4095;
+  ASSERT_EQ(4095, program_counter);
+  ASSERT_THROW(fetchOpcode(), FatalError);
 }
 
 TEST_F(EmulatorFetchOpcode, JustInsideRAMLoops) {
@@ -28,12 +32,6 @@ TEST_F(EmulatorFetchOpcode, JustInsideRAMLoops) {
   ASSERT_EQ(4094, program_counter);
   ASSERT_EQ(0U, fetchOpcode());
   ASSERT_EQ(0, program_counter);
-}
-
-TEST_F(EmulatorFetchOpcode, UnevenProgramCounter) {
-  program_counter++;
-  ASSERT_EQ(0x201, program_counter);
-  ASSERT_THROW(fetchOpcode(), FatalError);
 }
 
 TEST_F(EmulatorFetchOpcode, ReadDataCorrectly) {

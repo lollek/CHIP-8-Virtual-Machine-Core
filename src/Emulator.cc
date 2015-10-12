@@ -100,13 +100,8 @@ bool Emulator::loadFileToRam(std::string const& filename) {
 }
 
 halfword Emulator::fetchOpcode() {
-  if (program_counter >= ram_size) {
+  if (program_counter >= ram_size - 1) {
     throw FatalError("Program counter out of bounds("
-                   + std::to_string(program_counter) + ")");
-  }
-
-  if (program_counter % 2) {
-    throw FatalError("Program counter is misaligned ("
                    + std::to_string(program_counter) + ")");
   }
 
