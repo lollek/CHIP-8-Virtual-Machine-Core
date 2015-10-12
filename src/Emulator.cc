@@ -285,21 +285,24 @@ void Emulator::handleOpcode(halfword opcode) {
      * - Align the drawing to the two bytes
      * - XOR the data
      * - Put both bytes back
-     * In some cases, this would make us draw past the screen, so we wrap around */
+     * In some cases, this would make us draw past the screen, so we skip those*/
     for (unsigned y = 0; y < num_rows; ++y) {
-      halfword graphics_data = ram.at(index_register + y) << (8 - sprite_x_bits);
-
       unsigned screen_pos = (sprite_x_bytes + ((sprite_y + y) * screen_columns));
-      halfword screen_data = (screen.at(screen_pos % screen_bytes) << 8)
-                           + screen.at((screen_pos + 1) % screen_bytes);
+      byte scratch_byte = 0;
+      byte& screen_byte_left = screen.at(screen_pos % screen_bytes);
+      byte& screen_byte_right = (screen_pos + 1 < screen_bytes)
+        ? (screen.at((screen_pos + 1) % screen_bytes))
+        : scratch_byte;
 
+      halfword screen_data = (screen_byte_left << 8) + screen_byte_right;
+      halfword graphics_data = ram.at(index_register + y) << (8 - sprite_x_bits);
       if (screen_data & graphics_data) {
         registers.at(0xF) = 1;
       }
       screen_data ^= graphics_data;
 
-      screen.at(screen_pos % screen_bytes) = ((screen_data & 0xFF00) >> 8);
-      screen.at((screen_pos + 1) % screen_bytes) = (screen_data & 0x00FF);
+      screen_byte_left = ((screen_data & 0xFF00) >> 8);
+      screen_byte_right = (screen_data & 0x00FF);
     }
 
     if (onGraphics != nullptr) {

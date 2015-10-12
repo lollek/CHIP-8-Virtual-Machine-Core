@@ -399,6 +399,21 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ASSERT_EQ(0U, screen.at(0 + (4 * screen_columns)));
   ASSERT_EQ(0U, screen.at(1 + (4 * screen_columns)));
   ASSERT_EQ(1, registers.at(0xF));
+
+
+  /* Drawing past the buffer should not wrap around (it should simple be * ignored) */
+  ram.at(index_register) = 0xFF;
+  registers.at(4) = (screen_columns * 8) - 1;
+  registers.at(5) = screen_rows -1;
+  ASSERT_EQ(0x00, screen.at((screen_columns - 1) + ((screen_rows - 1) * screen_columns)));
+  ASSERT_EQ(0x00, screen.at(0));
+  handleOpcode(0xD451);
+
+  ram.at(index_register) = 0x00;
+  ASSERT_EQ(0x01, screen.at((screen_columns - 1) + ((screen_rows - 1) * screen_columns)));
+  ASSERT_EQ(0x00, screen.at(0));
+  ASSERT_EQ(0, registers.at(0xF));
+
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xEX9E) {
