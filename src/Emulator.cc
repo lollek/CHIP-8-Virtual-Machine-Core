@@ -276,6 +276,7 @@ void Emulator::handleOpcode(halfword opcode) {
      * toggles the screen pixels). Sprites are drawn starting at position VX,
      * VY. N is the number of 8bit rows that need to be drawn. If N is greater
      * than 1, second line continues at position VX, VY+1, and so on. */
+
     unsigned sprite_x = registers.at((opcode & 0x0F00) >> 8);
     unsigned sprite_y = registers.at((opcode & 0x00F0) >> 4);
     unsigned num_rows = opcode & 0x000F;
@@ -294,18 +295,10 @@ void Emulator::handleOpcode(halfword opcode) {
       if (screen_data & graphics_data) {
         registers.at(0xF) = 1;
       }
+      screen_data ^= graphics_data;
 
-      halfword processed_data = 0;
-      for (unsigned x = 0; x < 16; ++x) {
-        if (graphics_data & (0x8000 >> x)) {
-          processed_data |= ((~screen_data) & (0x8000 >> x));
-        } else {
-          processed_data |= (screen_data & (0x8000 >> x));
-        }
-      }
-
-      screen.at(screen_pos % screen_bytes) = ((processed_data & 0xFF00) >> 8);
-      screen.at((screen_pos + 1) % screen_bytes) = (processed_data & 0x00FF);
+      screen.at(screen_pos % screen_bytes) = ((screen_data & 0xFF00) >> 8);
+      screen.at((screen_pos + 1) % screen_bytes) = (screen_data & 0x00FF);
     }
 
     if (onGraphics != nullptr) {
