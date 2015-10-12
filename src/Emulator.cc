@@ -285,6 +285,12 @@ void Emulator::handleOpcode(halfword opcode) {
     unsigned sprite_x_bytes = sprite_x / 8;
     unsigned sprite_x_bits = sprite_x % 8;
 
+    /* Since drawings are most often not byte-aligned:
+     * - Take out both possibly affected bytes
+     * - Align the drawing to the two bytes
+     * - XOR the data
+     * - Put both bytes back
+     * In some cases, this would make us draw past the screen, so we wrap around */
     for (unsigned y = 0; y < num_rows; ++y) {
       halfword graphics_data = ram.at(index_register + y) << (8 - sprite_x_bits);
 

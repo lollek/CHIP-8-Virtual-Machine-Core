@@ -355,7 +355,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ram.at(index_register + 2) = 0x56;
   ram.at(index_register + 3) = 0x78;
 
-  /* Draw a line at the corner */
+  /* Draw a byte-aligned line at the corner */
   ASSERT_EQ(0U, screen.at(0));
   handleOpcode(0xD001);
   ASSERT_EQ(0x12, screen.at(0));
@@ -366,26 +366,38 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ASSERT_EQ(0U, screen.at(0));
   ASSERT_EQ(1, registers.at(0xF));
 
-  /* Draw a few lines */
-  ASSERT_EQ(0U, screen.at(4 + (1 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (2 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (3 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (4 * screen_columns)));
+  /* Draw a few lines which are not byte-aligned */
+  ASSERT_EQ(0U, screen.at(0 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (4 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (4 * screen_columns)));
   registers.at(0) = 4;
   registers.at(1) = 1;
   handleOpcode(0xD014);
-  ASSERT_EQ(0x12, screen.at(4 + (1 * screen_columns)));
-  ASSERT_EQ(0x34, screen.at(4 + (2 * screen_columns)));
-  ASSERT_EQ(0x56, screen.at(4 + (3 * screen_columns)));
-  ASSERT_EQ(0x78, screen.at(4 + (4 * screen_columns)));
+  ASSERT_EQ(0x01, screen.at(0 + (1 * screen_columns)));
+  ASSERT_EQ(0x20, screen.at(1 + (1 * screen_columns)));
+  ASSERT_EQ(0x03, screen.at(0 + (2 * screen_columns)));
+  ASSERT_EQ(0x40, screen.at(1 + (2 * screen_columns)));
+  ASSERT_EQ(0x05, screen.at(0 + (3 * screen_columns)));
+  ASSERT_EQ(0x60, screen.at(1 + (3 * screen_columns)));
+  ASSERT_EQ(0x07, screen.at(0 + (4 * screen_columns)));
+  ASSERT_EQ(0x80, screen.at(1 + (4 * screen_columns)));
   ASSERT_EQ(0, registers.at(0xF));
 
   /* Remove them */
   handleOpcode(0xD014);
-  ASSERT_EQ(0U, screen.at(4 + (1 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (2 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (3 * screen_columns)));
-  ASSERT_EQ(0U, screen.at(4 + (4 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (1 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (2 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (3 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(0 + (4 * screen_columns)));
+  ASSERT_EQ(0U, screen.at(1 + (4 * screen_columns)));
   ASSERT_EQ(1, registers.at(0xF));
 }
 
