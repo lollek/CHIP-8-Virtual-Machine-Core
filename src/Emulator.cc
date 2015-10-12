@@ -281,14 +281,44 @@ void Emulator::handleOpcode(halfword opcode) {
     unsigned num_rows = opcode & 0x000F;
     registers.at(0xF) = 0;
 
+    unsigned sprite_x_bytes = sprite_x / 8;
+    unsigned sprite_x_bits = sprite_x % 8;
+    if (sprite_x_bits) {
+      return;
+    }
+
     for (unsigned y = 0; y < num_rows; ++y) {
-      byte byte_new = ram.at(index_register + y);
-      unsigned byte_old_pos = sprite_x + ((sprite_y + y) * screen_columns);
-      byte& byte_old = screen.at(byte_old_pos % screen_bytes);
-      if (byte_new & byte_old) {
+      byte byte_graphics = ram.at(index_register + y);
+
+      unsigned screen_pos = (sprite_x_bytes + ((sprite_y + y) * screen_columns));
+      byte& screen_byte = screen.at(screen_pos % screen_bytes);
+
+      if (screen_byte & byte_graphics) {
         registers.at(0xF) = 1;
       }
-      byte_old ^= byte_new;
+
+      byte processed_byte = 0;
+      for (unsigned x = 0; x < 8; ++x) {
+        if (byte_graphics & (0x80 >> x)) {
+          processed_byte |= ((~screen_byte) & (0x80 >> x));
+        } else {
+          processed_byte |= (screen_byte & (0x80 >> x));
+        }
+      }
+
+      for (unsigned i = 0; i < 8; ++i) {
+        std::cout << (screen_byte & (0x80 >> i) ? "1" : "0");
+      }
+      std::cout << " | ";
+      for (unsigned i = 0; i < 8; ++i) {
+        std::cout << (byte_graphics & (0x80 >> i) ? "1" : "0");
+      }
+      std::cout << " = ";
+      for (unsigned i = 0; i < 8; ++i) {
+        std::cout << (processed_byte & (0x80 >> i) ? "1" : "0");
+      }
+      std::cout << "\n";
+      screen_byte = processed_byte;
     }
 
     if (onGraphics != nullptr) {
