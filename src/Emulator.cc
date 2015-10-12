@@ -66,6 +66,20 @@ Emulator::Emulator() :
     memcpy(ram.data(), font.data(), font.size());
 }
 
+void Emulator::resetState() {
+  ram = std::vector<byte>(ram_size, 0);
+  screen = std::vector<screen_row>(screen_bytes, 0);
+  registers = std::vector<byte>(num_registers, 0);
+  index_register = 0;
+  program_counter = program_counter_start;
+  sound_timer = 0;
+  delay_timer = 0;
+  stack = std::vector<halfword>(stack_size, 0);
+  stack_pointer = 0;
+  keys_state = std::vector<byte>(num_keys, 0);
+  error_msg = "";
+}
+
 std::string const& Emulator::getError() const {
   return error_msg;
 }
@@ -93,9 +107,12 @@ bool Emulator::loadFileToRam(std::string const& filename) {
     return false;
   }
 
+  tick_lock = true;
   file.seekg(0, std::ios::beg);
+  resetState();
   file.read(reinterpret_cast<char *>(&ram.data()[program_counter]), filesize);
 
+  tick_lock = false;
   return true;
 }
 

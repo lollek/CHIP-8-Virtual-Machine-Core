@@ -50,6 +50,7 @@ public:
 protected:
   halfword fetchOpcode() ;
   void handleOpcode(halfword opcode);
+  void resetState();
 
   std::vector<byte>       ram;
   std::vector<screen_row> screen;
