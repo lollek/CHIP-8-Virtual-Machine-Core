@@ -20,10 +20,9 @@ endif()
 # Main project - chip8core library
 set(PROJECT_NAME chip8core)
 project(${PROJECT_NAME} CXX)
+set(PROJECT_VERSION "1.0")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic -std=c++11")
 set(PROJECT_SOURCE_DIR src)
-set(CHIP8_VERSION_MAJOR 1)
-set(CHIP8_VERSION_MINOR 0)
 
 include_directories(${chip8core_SOURCE_DIR}/include)
 add_library(chip8core src/Emulator.cc)
