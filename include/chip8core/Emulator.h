@@ -16,15 +16,45 @@ public:
   Emulator();
   ~Emulator() = default;
 
+  /**
+   * Returns most recent error message
+   */
   std::string const& getError() const;
+
+  /**
+   * Get a pointer to the graphics data
+   * TODO: Add more info
+   */
   byte const* getGraphicsData() const;
+
+  /**
+   * Set the key to either pressed or unpressed
+   * key_number must be between 0 and Emulator::num_keys
+   * on should be true if pressed down, else false.
+   */
   void setKeyState(int key_number, bool on);
 
+  /**
+   * If a function is set here, it will execute when the CPU wants sound
+   */
   std::function<void()> onSound;
+
+  /**
+   * If a function is set here, it will be called when graphics have changed.
+   * This is so you don't have to redraw every clock cycle.
+   */
   std::function<void()> onGraphics;
 
+  /**
+   * Tell the emulated CPU to process one clock cycle
+   */
   void tick();
 
+  /**
+   * Loads file with filename into RAM.
+   * Returns true on success.
+   * Returns false on error, and sets error message (see getError())
+   */
   bool loadFileToRam(std::string const& file);
 
   unsigned static constexpr ram_size = 4096;
