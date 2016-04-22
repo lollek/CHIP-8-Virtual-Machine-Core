@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Tests. Turn on with 'cmake -Dtest=ON'.
@@ -18,11 +18,11 @@ if (test)
 endif()
 
 # Main project - chip8core library
-set(PROJECT_NAME chip8core)
-project(${PROJECT_NAME} CXX)
-set(PROJECT_VERSION "1.0")
+project(chip8core
+  VERSION 1.0
+  LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic -std=c++11")
 set(PROJECT_SOURCE_DIR src)
 
 include_directories(${chip8core_SOURCE_DIR}/include)
-add_library(chip8core src/Emulator.cc)
+add_library(${PROJECT_NAME} src/Emulator.cc)
