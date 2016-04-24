@@ -19,7 +19,7 @@ endif()
 
 # Main project - chip8core library
 project(chip8core
-  VERSION 1.0
+  VERSION 1.1
   LANGUAGES CXX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -pedantic -std=c++11")
 set(PROJECT_SOURCE_DIR src)

@@ -13,8 +13,13 @@ using screen_row = uint8_t;
 
 class Emulator {
 public:
-  Emulator();
+  explicit Emulator();
+  explicit Emulator(Emulator const&) = default;
   ~Emulator() = default;
+
+  Emulator& operator=(Emulator const&) = default;
+  Emulator& operator=(Emulator&&) = default;
+
 
   /**
    * Returns most recent error message
@@ -111,7 +116,9 @@ protected:
   std::vector<byte>       keys_state;
 
   std::string             error_msg;
-  bool tick_lock;
+  bool                    tick_lock;
+  bool                    awaiting_keypress;
+  unsigned                awaiting_keypress_register;
 };
 
 #endif /* EMULATOR_H */

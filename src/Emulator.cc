@@ -40,25 +40,16 @@ Emulator::Emulator() :
   stack_pointer(0),
   keys_state(std::vector<byte>(num_keys, 0)),
   error_msg(),
-  tick_lock(false)
+  tick_lock(false),
+  awaiting_keypress(false),
+  awaiting_keypress_register(0)
   {
     srand(time(NULL));
     addFontDataToRam();
 }
 
 void Emulator::resetState() {
-  ram = std::vector<byte>(ram_size, 0);
-  addFontDataToRam();
-  screen = std::vector<screen_row>(screen_bytes, 0);
-  registers = std::vector<byte>(num_registers, 0);
-  index_register = 0;
-  program_counter = program_counter_start;
-  sound_timer = 0;
-  delay_timer = 0;
-  stack = std::vector<halfword>(stack_size, 0);
-  stack_pointer = 0;
-  keys_state = std::vector<byte>(num_keys, 0);
-  error_msg = "";
+  *this = Emulator();
 }
 
 void Emulator::addFontDataToRam() {
@@ -94,6 +85,11 @@ byte const* Emulator::getGraphicsData() const {
 
 void Emulator::setKeyState(int key_number, bool on) {
   keys_state.at(key_number) = on ? 0xFF : 0x00;
+
+  if (awaiting_keypress) {
+    registers.at(awaiting_keypress_register) = key_number;
+    awaiting_keypress = false;
+  }
 }
 
 bool Emulator::loadFileToRam(std::string const& filename) {
@@ -365,7 +361,8 @@ void Emulator::handleOpcodeF(halfword opcode) {
 
    // 0xFX0A - A key press is awaited, and then stored in VX.
   } else if ((opcode & 0xF0FF) == 0xF00A) {
-    throw NotImplementedError("Opcode " + std::to_string(opcode) + " not implemented");
+    awaiting_keypress = true;
+    awaiting_keypress_register = x_register;
 
    // 0xFX15 -* Sets the delay timer to VX.
   } else if ((opcode & 0xF0FF) == 0xF015) {
@@ -441,7 +438,7 @@ void Emulator::handleOpcode(halfword opcode) {
 }
 
 void Emulator::tick() {
-  if (tick_lock) {
+  if (awaiting_keypress || tick_lock) {
     return;
   }
   tick_lock = true;
