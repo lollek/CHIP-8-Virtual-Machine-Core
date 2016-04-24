@@ -246,6 +246,14 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY6) {
   handleOpcode(0x8006);
   ASSERT_EQ(1, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
+
+  registers.at(0xF) = 255;
+  registers.at(0) = 4;
+  registers.at(1) = 2;
+  handleOpcode(0x8016);
+  ASSERT_EQ(1, registers.at(0));
+  ASSERT_EQ(1, registers.at(1));
+  ASSERT_EQ(0, registers.at(0xF));
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0x8XY7) {
@@ -272,13 +280,17 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XYE) {
   ASSERT_EQ(0, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
-  registers.at(1) = 0x80;
+  registers.at(1) = 0;
+  registers.at(0) = 0x80;
   handleOpcode(0x810E);
+  ASSERT_EQ(0, registers.at(0));
   ASSERT_EQ(0, registers.at(1));
   ASSERT_EQ(1, registers.at(0xF));
 
-  registers.at(2) = 0x70;
+  registers.at(0) = 0x70;
+  registers.at(2) = 0x50;
   handleOpcode(0x820E);
+  ASSERT_EQ(0xE0, registers.at(0));
   ASSERT_EQ(0xE0, registers.at(2));
   ASSERT_EQ(0, registers.at(0xF));
 }

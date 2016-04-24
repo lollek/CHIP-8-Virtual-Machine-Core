@@ -216,10 +216,11 @@ void Emulator::handleOpcode8(halfword opcode) {
       vf_register() = old_value >= vx_register(opcode);
     } break;
 
-    // 0x8XY6 - Shift to the right and set VF to previous least significant bit
+    // 0x8XY6 - Shift VY to the right and copy it to VX
+    // VF is set to the previous least significant bit
     case 0x0006:
-      vf_register() = vx_register(opcode) & 1;
-      vx_register(opcode) >>= 1;
+      vf_register() = vy_register(opcode) & 1;
+      vx_register(opcode) = vy_register(opcode) >>= 1;
       break;
 
     // 0x8XY7 - Sets VX to VY minus VX. VF is set to 0 when there's a borrow, else 1
@@ -228,11 +229,11 @@ void Emulator::handleOpcode8(halfword opcode) {
       vf_register() = vy_register(opcode) >= vx_register(opcode);
       break;
 
-    // 0x8XYE - Shifts VX left by one.
+    // 0x8XYE - Shifts VY left by one and copy it to VX.
     // VF is set to the most significant bit before the shift.
     case 0x000E:
-      vf_register() = vx_register(opcode) & 0x80 ? 1 : 0;
-      vx_register(opcode) <<= 1;
+      vf_register() = vy_register(opcode) & 0x80 ? 1 : 0;
+      vx_register(opcode) = vy_register(opcode) <<= 1;
       break;
 
     default:
