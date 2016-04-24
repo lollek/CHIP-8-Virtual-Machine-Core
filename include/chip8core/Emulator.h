@@ -84,6 +84,7 @@ public:
 
 protected:
   halfword fetchOpcode();
+
   void handleOpcode(halfword opcode);
   void handleOpcode0(halfword opcode);
   void handleOpcode1(halfword opcode);
@@ -101,6 +102,23 @@ protected:
   void handleOpcodeD(halfword opcode);
   void handleOpcodeE(halfword opcode);
   void handleOpcodeF(halfword opcode);
+
+  // Returns part of the opcode value where opcode looks like this:
+  // 0xWXYZ or 0x0NNN or 0x00NN
+  halfword op_w_value(halfword opcode);
+  halfword op_x_value(halfword opcode);
+  halfword op_y_value(halfword opcode);
+  halfword op_z_value(halfword opcode);
+  halfword op_nnn_value(halfword opcode);
+  halfword op_nn_value(halfword opcode);
+
+  byte& vx_register(halfword opcode);
+  byte& vy_register(halfword opcode);
+  byte& vf_register();
+
+  void increment_pc();
+
+
   void resetState();
   void addFontDataToRam();
 
