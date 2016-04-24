@@ -86,7 +86,6 @@ TEST_F(EmulatorHandleOpcode, OP_0x4XNN) {
 
 TEST_F(EmulatorHandleOpcode, OP_0x5XY0) {
   ASSERT_EQ(0x200, program_counter);
-  ASSERT_THROW(handleOpcode(0x5001), NotImplementedError);
 
   registers.at(0) = 42;
   registers.at(1) = 42;

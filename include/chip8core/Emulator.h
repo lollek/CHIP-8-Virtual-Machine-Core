@@ -78,8 +78,24 @@ public:
 
 
 protected:
-  halfword fetchOpcode() ;
+  halfword fetchOpcode();
   void handleOpcode(halfword opcode);
+  void handleOpcode0(halfword opcode);
+  void handleOpcode1(halfword opcode);
+  void handleOpcode2(halfword opcode);
+  void handleOpcode3(halfword opcode);
+  void handleOpcode4(halfword opcode);
+  void handleOpcode5(halfword opcode);
+  void handleOpcode6(halfword opcode);
+  void handleOpcode7(halfword opcode);
+  void handleOpcode8(halfword opcode);
+  void handleOpcode9(halfword opcode);
+  void handleOpcodeA(halfword opcode);
+  void handleOpcodeB(halfword opcode);
+  void handleOpcodeC(halfword opcode);
+  void handleOpcodeD(halfword opcode);
+  void handleOpcodeE(halfword opcode);
+  void handleOpcodeF(halfword opcode);
   void resetState();
   void addFontDataToRam();
 
