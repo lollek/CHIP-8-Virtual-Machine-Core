@@ -150,26 +150,56 @@ void SET() {
 
 void ADD() {
   io::tok2reg("ADD", io::next_token(), lhs);
-  io::tok2nn("ADD", io::next_token(), rhs);
-  io::write_bins(0x70 + lhs, rhs);
+  io::tok2reg_or_nn("ADD", io::next_token(), rhs, t);
+  if (t == io::NN) {
+    io::write_bins(0x70 + lhs, rhs);
+  } else if (t == io::REG) {
+    io::write_bins(0x80 + lhs, (rhs << 4) + 0x04);
+  } else {
+    io::exit_err("ADD: Unknown type\n");
+  }
 }
 
 void OR() {
   io::tok2reg("OR", io::next_token(), lhs);
   io::tok2reg("OR", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, rhs + 0x01);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x01);
 }
 
 void AND() {
   io::tok2reg("AND", io::next_token(), lhs);
   io::tok2reg("AND", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, rhs + 0x02);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x02);
 }
 
 void XOR() {
   io::tok2reg("XOR", io::next_token(), lhs);
   io::tok2reg("XOR", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, rhs + 0x03);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x03);
+}
+
+void SUB() {
+  io::tok2reg("SUB", io::next_token(), lhs);
+  io::tok2reg("SUB", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x05);
+}
+
+void SHR() {
+  io::tok2reg("SHR", io::next_token(), lhs);
+  io::tok2reg("SHR", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x06);
+}
+
+void RSUB() {
+  io::tok2reg("RSUB", io::next_token(), lhs);
+  io::tok2reg("RSUB", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x07);
+}
+
+void SHL() {
+  io::tok2reg("SHL", io::next_token(), lhs);
+  io::tok2reg("SHL", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, (rhs << 4) + 0x0E);
 }
 
 } // op
@@ -191,7 +221,12 @@ int help(string program_name) {
     << "SET  rX  rY  - 0x8XY0\n"
     << "OR   rX  rY  - 0x8XY1\n"
     << "AND  rX  rY  - 0x8XY2\n"
-    << "XOR  rX  rY  - 0x8XY3\n";
+    << "XOR  rX  rY  - 0x8XY3\n"
+    << "ADD  rX  rY  - 0x8XY4\n"
+    << "SUB  rX  rY  - 0x8XY5\n"
+    << "SHR  rX  rY  - 0x8XY6\n"
+    << "RSUB rX  rY  - 0x8XY7\n"
+    << "SHL  rX  rY  - 0x8XYE\n";
 
   return 1;
 }
@@ -231,6 +266,10 @@ int main(int argc, char* argv[]) {
     {"OR",   op::OR},
     {"AND",  op::AND},
     {"XOR",  op::XOR},
+    {"SUB",  op::SUB},
+    {"SHR",  op::SHR},
+    {"RSUB", op::RSUB},
+    {"SHL",  op::SHL},
   };
 
 
