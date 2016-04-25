@@ -10,56 +10,74 @@ namespace {
 ofstream outfile;
 ifstream infile;
 
+void exit_ok() {
+  infile.close();
+  outfile.close();
+  exit(0);
+}
+
+void exit_err(string const& error) {
+  cerr << error;
+  infile.close();
+  outfile.close();
+  exit(1);
+}
+
 class Token {
 public:
   explicit Token() {
     infile >> value;
     if (!infile) {
-      infile.close();
-      outfile.close();
-      exit(0);
+      exit_ok();
     }
   }
+
+  enum type {
+    REG,
+    NN
+  };
 
   string const& as_str() {
     return value;
   }
 
-  bool make_nn(string const& name, char& nn) {
+  void make_nn(string const& name, char& nn) {
     int target = xtoi(value);
     if (0 > target || 0xFF < target) {
-      cerr << "Error: " << name << " needs to be supplied with a value [0-FF]\n";
-      return false;
+      exit_err("Error: " + name + " needs to be supplied with a value [0-FF]\n");
     }
     nn = target;
-    return true;
   }
 
-  bool make_nnn(string const& name, char& lhs, char& rhs) {
+  void make_nnn(string const& name, char& lhs, char& rhs) {
     int target = xtoi(value);
     if (0 > target || 0xFFF < target) {
-      cerr << "Error: " << name << " needs to be supplied with a value [0-FFF]\n";
-      return false;
+      exit_err("Error: " + name + " needs to be supplied with a value [0-FFF]\n");
     }
     lhs = target >> 8;
     rhs = target & 0xFF;
-    return true;
   }
 
-  bool make_reg(string const& name, char& reg) {
+  void make_reg(string const& name, char& reg) {
     if (value.at(0) != 'r') {
-      cerr << "Error: " << name << " needs to be supplied with a register r[0-F]\n";
-      reg = -1;
-      return false;
+      exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
     }
 
     int target = xtoi(value.substr(1));
     if (0 > target || 0xF < target) {
-      cerr << "Error: " << name << " needs to be supplied with a register r[0-F]\n";
-      return false;
+      exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
     }
     reg = target;
-    return true;
+  }
+
+  void make_reg_or_nn(string const& name, char& reg_or_nn, type& t) {
+    if (value.at(0) == 'r') {
+      t = REG;
+      make_reg(name, reg_or_nn);
+    } else {
+      t = NN;
+      make_nn(name, reg_or_nn);
+    }
   }
 
 private:
@@ -74,36 +92,45 @@ private:
   string value;
 };
 
-bool write_bins(char lhs, char rhs) {
+void write_bins(char lhs, char rhs) {
   outfile.write(static_cast<char*>(&lhs), 1);
   outfile.write(static_cast<char*>(&rhs), 1);
-  return !outfile.fail();
+  if (outfile.fail()) {
+    exit_err("Error writing to disk");
+  }
 }
 
 
-bool cls() { return write_bins(0x00, 0xE0); }
-bool ret() { return write_bins(0x00, 0xEE); }
-bool jmp() {
+void cls() { write_bins(0x00, 0xE0); }
+void ret() { write_bins(0x00, 0xEE); }
+void jmp() {
   char lhs, rhs;
-  return Token().make_nnn("JMP", lhs, rhs) &&
-         write_bins(0x10 + lhs, rhs);
+  Token().make_nnn("JMP", lhs, rhs);
+  write_bins(0x10 + lhs, rhs);
 }
-bool call() {
+void call() {
   char lhs, rhs;
-  return Token().make_nnn("CALL", lhs, rhs) &&
-         write_bins(0x20 + lhs, rhs);
+  Token().make_nnn("CALL", lhs, rhs);
+  write_bins(0x20 + lhs, rhs);
 }
-bool ifn() {
+void ifn() {
   char xreg, nn;
-  return Token().make_reg("IFN", xreg) &&
-         Token().make_nn("IFN", nn) &&
-         write_bins(0x30 + xreg, nn);
+  Token::type t;
+  Token().make_reg("IFN", xreg);
+  Token().make_reg_or_nn("IFN", nn, t);
+  if (t == Token::NN) {
+    write_bins(0x30 + xreg, nn);
+  } else if (t == Token::REG) {
+    write_bins(0x50 + xreg, nn << 4);
+  } else {
+    exit_err("IFN: Unknown type\n");
+  }
 }
-bool if_() {
+void if_() {
   char xreg, nn;
-  return Token().make_reg("IF", xreg) &&
-         Token().make_nn("IF", nn) &&
-         write_bins(0x40 + xreg, nn);
+  Token().make_reg("IF", xreg);
+  Token().make_nn("IF", nn);
+  write_bins(0x40 + xreg, nn);
 }
 
 int help(string program_name) {
@@ -143,7 +170,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  map<string const, function<bool()>> const op2fun {
+  map<string const, function<void()>> const op2fun {
     {"CLS",  cls},
     {"RET",  ret},
     {"JMP",  jmp},
@@ -159,13 +186,10 @@ int main(int argc, char* argv[]) {
 
     auto const fun{op2fun.find(tok.as_str())};
     if (fun == op2fun.end()) {
-      cerr << "Unknown command '" << tok.as_str() << "'\n";
-      return 1;
+      exit_err("Unknown command '" + tok.as_str() + "'\n");
     }
 
-    if (!fun->second()) {
-      return 1;
-    }
+    fun->second();
   }
 
   // Not reached
