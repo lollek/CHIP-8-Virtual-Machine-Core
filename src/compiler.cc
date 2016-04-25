@@ -122,62 +122,61 @@ int help(string program_name) {
 
 namespace op {
 
+// These variables are shared between all below functions
+char lhs;
+char rhs;
+Token::type t;
+
 void CLS() { write_bins(0x00, 0xE0); }
 
 void RET() { write_bins(0x00, 0xEE); }
 
 void JMP() {
-  char lhs, rhs;
   Token().make_nnn("JMP", lhs, rhs);
   write_bins(0x10 + lhs, rhs);
 }
 
 void CALL() {
-  char lhs, rhs;
   Token().make_nnn("CALL", lhs, rhs);
   write_bins(0x20 + lhs, rhs);
 }
 
 void IFN() {
-  char xreg, nn;
   Token::type t;
-  Token().make_reg("IFN", xreg);
-  Token().make_reg_or_nn("IFN", nn, t);
+  Token().make_reg("IFN", lhs);
+  Token().make_reg_or_nn("IFN", rhs, t);
   if (t == Token::NN) {
-    write_bins(0x30 + xreg, nn);
+    write_bins(0x30 + lhs, rhs);
   } else if (t == Token::REG) {
-    write_bins(0x50 + xreg, nn << 4);
+    write_bins(0x50 + lhs, rhs << 4);
   } else {
     exit_err("IFN: Unknown type\n");
   }
 }
 
 void IF() {
-  char xreg, nn;
-  Token().make_reg("IF", xreg);
-  Token().make_nn("IF", nn);
-  write_bins(0x40 + xreg, nn);
+  Token().make_reg("IF", lhs);
+  Token().make_nn("IF", rhs);
+  write_bins(0x40 + lhs, rhs);
 }
 
 void SET() {
-  char xreg, nn;
   Token::type t;
-  Token().make_reg("SET", xreg);
-  Token().make_reg_or_nn("SET", nn, t);
+  Token().make_reg("SET", lhs);
+  Token().make_reg_or_nn("SET", rhs, t);
   if (t == Token::NN) {
-    write_bins(0x60 + xreg, nn);
+    write_bins(0x60 + lhs, rhs);
   } else if (t == Token::REG) {
-    write_bins(0x80 + xreg, nn << 4);
+    write_bins(0x80 + lhs, rhs << 4);
   } else {
     exit_err("SET: Unknown type\n");
   }
 }
 
 void ADD() {
-  char xreg, nn;
-  Token().make_reg("ADD", xreg);
-  Token().make_nn("ADD", nn);
-  write_bins(0x70 + xreg, nn);
+  Token().make_reg("ADD", lhs);
+  Token().make_nn("ADD", rhs);
+  write_bins(0x70 + lhs, rhs);
 }
 
 } // op
