@@ -56,6 +56,14 @@ string next_token() {
   return value;
 }
 
+void tok2n(string const& name, string&& value, char& n) {
+  int target = xtoi(value);
+  if (0 > target || 0xF < target) {
+    exit_err("Error: " + name + " needs to be supplied with a value [0-F]\n");
+  }
+  n = target;
+}
+
 void tok2nn(string const& name, string&& value, char& nn) {
   int target = xtoi(value);
   if (0 > target || 0xFF < target) {
@@ -102,6 +110,7 @@ namespace op {
 // These variables are shared between all below functions
 char lhs;
 char rhs;
+char rhs2;
 io::token_type t;
 
 void CLS() { io::write_bins(0x00, 0xE0); }
@@ -132,8 +141,14 @@ void IFN() {
 
 void IF() {
   io::tok2reg("IF", io::next_token(), lhs);
-  io::tok2nn("IF", io::next_token(), rhs);
-  io::write_bins(0x40 + lhs, rhs);
+  io::tok2reg_or_nn("IF", io::next_token(), rhs, t);
+  if (t == io::NN) {
+    io::write_bins(0x40 + lhs, rhs);
+  } else if (t == io::REG) {
+    io::write_bins(0x90 + lhs, (rhs << 4) + 0x04);
+  } else {
+    io::exit_err("IF: Unknown type\n");
+  }
 }
 
 void SET() {
@@ -202,6 +217,29 @@ void SHL() {
   io::write_bins(0x80 + lhs, (rhs << 4) + 0x0E);
 }
 
+void IDX() {
+  io::tok2nnn("IDX", io::next_token(), lhs, rhs);
+  io::write_bins(0xA0 + lhs, rhs);
+}
+
+void JMP0() {
+  io::tok2nnn("JMP0", io::next_token(), lhs, rhs);
+  io::write_bins(0xB0 + lhs, rhs);
+}
+
+void RND() {
+  io::tok2reg("RND", io::next_token(), lhs);
+  io::tok2nn("RND", io::next_token(), rhs);
+  io::write_bins(0xC0 + lhs, rhs);
+}
+
+void DRAW() {
+  io::tok2reg("DRAW", io::next_token(), lhs);
+  io::tok2reg("DRAW", io::next_token(), rhs);
+  io::tok2n("DRAW", io::next_token(), rhs2);
+  io::write_bins(0xD0 + lhs, (rhs << 4) + rhs2);
+}
+
 } // op
 
 
@@ -226,7 +264,12 @@ int help(string program_name) {
     << "SUB  rX  rY  - 0x8XY5\n"
     << "SHR  rX  rY  - 0x8XY6\n"
     << "RSUB rX  rY  - 0x8XY7\n"
-    << "SHL  rX  rY  - 0x8XYE\n";
+    << "SHL  rX  rY  - 0x8XYE\n"
+    << "IF   rX  rY  - 0x9XY0\n"
+    << "IDX  NNN     - 0xANNN\n"
+    << "JMP0 NNN     - 0xBNNN\n"
+    << "RND  rX NN   - 0xCXNN\n"
+    << "DRAW rX rY N - 0xDXYN\n";
 
   return 1;
 }
@@ -270,6 +313,10 @@ int main(int argc, char* argv[]) {
     {"SHR",  op::SHR},
     {"RSUB", op::RSUB},
     {"SHL",  op::SHL},
+    {"IDX",  op::IDX},
+    {"JMP0", op::JMP0},
+    {"RND",  op::RND},
+    {"DRAW", op::DRAW},
   };
 
 
