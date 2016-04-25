@@ -1,4 +1,5 @@
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -141,7 +142,8 @@ bool Emulator::handleOpcode0(halfword opcode) {
     // 0x0NNN - Calls RCA 1802 program at address NNN.
     default: {
       std::stringstream ss;
-      ss << "Opcode " << std::hex << opcode << " not implemented";
+      ss << "Opcode " << std::hex << std::setw(4) << std::setfill('0')
+         << opcode << " not implemented";
       error_msg = ss.str();
       return false;
     }
@@ -250,7 +252,8 @@ bool Emulator::handleOpcode8(halfword opcode) {
 
     default: {
       std::stringstream ss;
-      ss << "Opcode " << std::hex << opcode << " not implemented";
+      ss << "Opcode " << std::hex << std::setw(4) << std::setfill('0')
+         << opcode << " not implemented";
       error_msg = ss.str();
       return false;
     }
@@ -347,7 +350,8 @@ bool Emulator::handleOpcodeE(halfword opcode) {
 
     default: {
       std::stringstream ss;
-      ss << "Opcode " << std::hex << opcode << " not implemented";
+      ss << "Opcode " << std::hex << std::setw(4) << std::setfill('0')
+         << opcode << " not implemented";
       error_msg = ss.str();
       return false;
     }
@@ -422,7 +426,8 @@ bool Emulator::handleOpcodeF(halfword opcode) {
 
     default: {
       std::stringstream ss;
-      ss << "Opcode " << std::hex << opcode << " not implemented";
+      ss << "Opcode " << std::hex << std::setw(4) << std::setfill('0')
+         << opcode << " not implemented";
       error_msg = ss.str();
       return false;
     }
