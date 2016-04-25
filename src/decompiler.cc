@@ -111,7 +111,7 @@ void describe_opcode(int line, int opcode) {
         case 0x8007:
           cout << "reg[" << hex << op_x_value(opcode)
                << "] = reg[" << hex << op_y_value(opcode)
-               << " - reg[" << hex << op_x_value(opcode)
+               << "] - reg[" << hex << op_x_value(opcode)
                << "] (modifies reg[f])";
           break;
 
