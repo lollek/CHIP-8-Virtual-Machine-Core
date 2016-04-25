@@ -132,6 +132,18 @@ void if_() {
   Token().make_nn("IF", nn);
   write_bins(0x40 + xreg, nn);
 }
+void set() {
+  char xreg, nn;
+  Token().make_reg("SET", xreg);
+  Token().make_nn("SET", nn);
+  write_bins(0x60 + xreg, nn);
+}
+void add() {
+  char xreg, nn;
+  Token().make_reg("ADD", xreg);
+  Token().make_nn("ADD", nn);
+  write_bins(0x70 + xreg, nn);
+}
 
 int help(string program_name) {
   cerr
@@ -143,7 +155,9 @@ int help(string program_name) {
     << "CALL NNN   - 0x2NNN\n"
     << "IFN rX NN  - 0x3XNN\n"
     << "IF rX NN   - 0x4XNN\n"
-    << "IFN rX rY  - 0x5XY0\n";
+    << "IFN rX rY  - 0x5XY0\n"
+    << "SET rX NN  - 0x6XNN\n"
+    << "ADD rX NN  - 0x7XNN\n";
 
   return 1;
 }
@@ -177,6 +191,8 @@ int main(int argc, char* argv[]) {
     {"CALL", call},
     {"IFN",  ifn},
     {"IF",   if_},
+    {"SET",   set},
+    {"ADD",   add},
   };
 
 
