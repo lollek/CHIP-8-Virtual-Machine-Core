@@ -7,6 +7,14 @@
 using namespace std;
 
 namespace {
+
+namespace io {
+
+enum token_type {
+  REG,
+  NN
+};
+
 ofstream outfile;
 ifstream infile;
 
@@ -23,75 +31,6 @@ void exit_err(string const& error) {
   exit(1);
 }
 
-class Token {
-public:
-  explicit Token() {
-    infile >> value;
-    if (!infile) {
-      exit_ok();
-    }
-  }
-
-  enum type {
-    REG,
-    NN
-  };
-
-  string const& as_str() {
-    return value;
-  }
-
-  void make_nn(string const& name, char& nn) {
-    int target = xtoi(value);
-    if (0 > target || 0xFF < target) {
-      exit_err("Error: " + name + " needs to be supplied with a value [0-FF]\n");
-    }
-    nn = target;
-  }
-
-  void make_nnn(string const& name, char& lhs, char& rhs) {
-    int target = xtoi(value);
-    if (0 > target || 0xFFF < target) {
-      exit_err("Error: " + name + " needs to be supplied with a value [0-FFF]\n");
-    }
-    lhs = target >> 8;
-    rhs = target & 0xFF;
-  }
-
-  void make_reg(string const& name, char& reg) {
-    if (value.at(0) != 'r') {
-      exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
-    }
-
-    int target = xtoi(value.substr(1));
-    if (0 > target || 0xF < target) {
-      exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
-    }
-    reg = target;
-  }
-
-  void make_reg_or_nn(string const& name, char& reg_or_nn, type& t) {
-    if (value.at(0) == 'r') {
-      t = REG;
-      make_reg(name, reg_or_nn);
-    } else {
-      t = NN;
-      make_nn(name, reg_or_nn);
-    }
-  }
-
-private:
-  int xtoi(string const& x) {
-    try {
-      return stoi(x, 0, 16);
-    } catch (exception &e) {
-      return -1;
-    }
-  }
-
-  string value;
-};
-
 void write_bins(char lhs, char rhs) {
   outfile.write(static_cast<char*>(&lhs), 1);
   outfile.write(static_cast<char*>(&rhs), 1);
@@ -100,7 +39,63 @@ void write_bins(char lhs, char rhs) {
   }
 }
 
+int xtoi(string const& x) {
+  try {
+    return stoi(x, 0, 16);
+  } catch (exception &e) {
+    return -1;
+  }
+}
 
+string next_token() {
+  string value;
+  io::infile >> value;
+  if (!io::infile) {
+    io::exit_ok();
+  }
+  return value;
+}
+
+void tok2nn(string const& name, string&& value, char& nn) {
+  int target = xtoi(value);
+  if (0 > target || 0xFF < target) {
+    exit_err("Error: " + name + " needs to be supplied with a value [0-FF]\n");
+  }
+  nn = target;
+}
+
+void tok2nnn(string const& name, string&& value, char& lhs, char& rhs) {
+  int target = xtoi(value);
+  if (0 > target || 0xFFF < target) {
+    exit_err("Error: " + name + " needs to be supplied with a value [0-FFF]\n");
+  }
+  lhs = target >> 8;
+  rhs = target & 0xFF;
+}
+
+void tok2reg(string const& name, string&& value, char& reg) {
+  if (value.at(0) != 'r') {
+    exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
+  }
+
+  int target = xtoi(value.substr(1));
+  if (0 > target || 0xF < target) {
+    exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
+  }
+  reg = target;
+}
+
+void tok2reg_or_nn(string const& name, string&& value, char& reg_or_nn, io::token_type& t) {
+  if (value.at(0) == 'r') {
+    t = REG;
+    tok2reg(name, forward<string>(value), reg_or_nn);
+  } else {
+    t = NN;
+    tok2nn(name, forward<string>(value), reg_or_nn);
+  }
+}
+
+} // io
 
 int help(string program_name) {
   cerr
@@ -125,58 +120,56 @@ namespace op {
 // These variables are shared between all below functions
 char lhs;
 char rhs;
-Token::type t;
+io::token_type t;
 
-void CLS() { write_bins(0x00, 0xE0); }
+void CLS() { io::write_bins(0x00, 0xE0); }
 
-void RET() { write_bins(0x00, 0xEE); }
+void RET() { io::write_bins(0x00, 0xEE); }
 
 void JMP() {
-  Token().make_nnn("JMP", lhs, rhs);
-  write_bins(0x10 + lhs, rhs);
+  io::tok2nnn("JMP", io::next_token(), lhs, rhs);
+  io::write_bins(0x10 + lhs, rhs);
 }
 
 void CALL() {
-  Token().make_nnn("CALL", lhs, rhs);
-  write_bins(0x20 + lhs, rhs);
+  io::tok2nnn("CALL", io::next_token(), lhs, rhs);
+  io::write_bins(0x20 + lhs, rhs);
 }
 
 void IFN() {
-  Token::type t;
-  Token().make_reg("IFN", lhs);
-  Token().make_reg_or_nn("IFN", rhs, t);
-  if (t == Token::NN) {
-    write_bins(0x30 + lhs, rhs);
-  } else if (t == Token::REG) {
-    write_bins(0x50 + lhs, rhs << 4);
+  io::tok2reg("IFN", io::next_token(), lhs);
+  io::tok2reg_or_nn("IFN", io::next_token(), rhs, t);
+  if (t == io::NN) {
+    io::write_bins(0x30 + lhs, rhs);
+  } else if (t == io::REG) {
+    io::write_bins(0x50 + lhs, rhs << 4);
   } else {
-    exit_err("IFN: Unknown type\n");
+    io::exit_err("IFN: Unknown type\n");
   }
 }
 
 void IF() {
-  Token().make_reg("IF", lhs);
-  Token().make_nn("IF", rhs);
-  write_bins(0x40 + lhs, rhs);
+  io::tok2reg("IF", io::next_token(), lhs);
+  io::tok2nn("IF", io::next_token(), rhs);
+  io::write_bins(0x40 + lhs, rhs);
 }
 
 void SET() {
-  Token::type t;
-  Token().make_reg("SET", lhs);
-  Token().make_reg_or_nn("SET", rhs, t);
-  if (t == Token::NN) {
-    write_bins(0x60 + lhs, rhs);
-  } else if (t == Token::REG) {
-    write_bins(0x80 + lhs, rhs << 4);
+  io::tok2reg("SET", io::next_token(), lhs);
+  io::tok2reg_or_nn("SET", io::next_token(), rhs, t);
+  if (t == io::NN) {
+    io::write_bins(0x60 + lhs, rhs);
+  } else if (t == io::REG) {
+    io::write_bins(0x80 + lhs, rhs << 4);
   } else {
-    exit_err("SET: Unknown type\n");
+    io::exit_err("SET: Unknown type\n");
   }
 }
 
 void ADD() {
-  Token().make_reg("ADD", lhs);
-  Token().make_nn("ADD", rhs);
-  write_bins(0x70 + lhs, rhs);
+  io::tok2reg("ADD", io::next_token(), lhs);
+  io::tok2nn("ADD", io::next_token(), rhs);
+  io::write_bins(0x70 + lhs, rhs);
 }
 
 } // op
@@ -189,8 +182,8 @@ int main(int argc, char* argv[]) {
     return help(argv[0]);
   }
 
-  infile = ifstream(argv[1], ios::binary);
-  if (!infile) {
+  io::infile = ifstream(argv[1], ios::binary);
+  if (!io::infile) {
     cerr << argv[0] << ": Unable to open " << argv[1] << "\n";
     return 1;
   }
@@ -198,8 +191,8 @@ int main(int argc, char* argv[]) {
   stringstream ss;
   ss << argv[1] << ".out";
   string const outfile_name{ss.str()};
-  outfile = ofstream(outfile_name, ios::binary);
-  if (!outfile) {
+  io::outfile = ofstream(outfile_name, ios::binary);
+  if (!io::outfile) {
     cerr << argv[0] << ": Unable to open " << outfile_name << "\n";
     return 1;
   }
@@ -218,11 +211,11 @@ int main(int argc, char* argv[]) {
 
   for (;;) {
     // This constructor will exit when no more input is received
-    Token tok;
+    string const tok{io::next_token()};
 
-    auto const fun{op2fun.find(tok.as_str())};
+    auto const fun{op2fun.find(tok)};
     if (fun == op2fun.end()) {
-      exit_err("Unknown command '" + tok.as_str() + "'\n");
+      io::exit_err("Unknown command '" + tok + "'\n");
     }
 
     fun->second();
