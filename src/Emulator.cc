@@ -376,20 +376,18 @@ void Emulator::handleOpcodeF(halfword opcode) {
     // Also sets I to I + X + 1
     case 0x0055: {
       halfword end = op_x_value(opcode);
-      for (halfword i = 0; i < end; ++i) {
+      for (halfword i = 0; i <= end; ++i) {
         ram.at(index_register++) = registers.at(i);
       }
-      ++index_register;
     } break;
 
     // 0xFX65 - Fills V0 to VX with values from memory starting at address I
     // Also sets I to I + X + 1
     case 0x0065: {
       halfword end = op_x_value(opcode);
-      for (halfword i = 0; i < end; ++i) {
+      for (halfword i = 0; i <= end; ++i) {
         registers.at(i) = ram.at(index_register++);
       }
-      ++index_register;
     } break;
 
     default:

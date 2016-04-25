@@ -576,20 +576,22 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
   handleOpcode(0xF155);
   ASSERT_EQ(1U, registers.at(0));
   ASSERT_EQ(1U, ram.at(previous_index));
-  ASSERT_EQ(0U, ram.at(previous_index + 1));
+  ASSERT_EQ(2U, ram.at(previous_index + 1));
+  ASSERT_EQ(0U, ram.at(previous_index + 2));
   ASSERT_EQ(previous_index + 1 + 1, index_register);
 
   index_register = previous_index;
   handleOpcode(0xF255);
   ASSERT_EQ(1U, ram.at(previous_index));
   ASSERT_EQ(2U, ram.at(previous_index + 1));
-  ASSERT_EQ(0U, ram.at(previous_index + 2));
+  ASSERT_EQ(3U, ram.at(previous_index + 2));
+  ASSERT_EQ(0U, ram.at(previous_index + 3));
   ASSERT_EQ(previous_index + 2 + 1, index_register);
 
   index_register = previous_index;
 
   handleOpcode(0xFF55);
-  for (unsigned i = 0; i < registers.size() - 1; ++i) {
+  for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(i + 1, ram.at(previous_index + i));
   }
 
@@ -610,19 +612,21 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX65) {
   handleOpcode(0xF165);
   ASSERT_EQ(1U, ram.at(previous_index));
   ASSERT_EQ(1U, registers.at(0));
-  ASSERT_EQ(0U, registers.at(1));
+  ASSERT_EQ(2U, registers.at(1));
+  ASSERT_EQ(0U, registers.at(2));
   ASSERT_EQ(index_register, previous_index + 1 + 1);
 
   index_register = previous_index;
   handleOpcode(0xF265);
   ASSERT_EQ(1U, registers.at(0));
   ASSERT_EQ(2U, registers.at(1));
-  ASSERT_EQ(0U, registers.at(2));
+  ASSERT_EQ(3U, registers.at(2));
+  ASSERT_EQ(0U, registers.at(3));
   ASSERT_EQ(index_register, previous_index + 2 + 1);
 
   index_register = previous_index;
   handleOpcode(0xFF65);
-  for (unsigned i = 0; i < registers.size() - 1; ++i) {
+  for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(i + 1, registers.at(i));
   }
   ASSERT_EQ(index_register, previous_index + 0xF + 1);
