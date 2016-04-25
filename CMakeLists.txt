@@ -32,5 +32,6 @@ option(tools "Build all extra tools." OFF)
 if (tools)
   message(STATUS "Tools enabled")
   add_executable(decompiler src/decompiler.cc)
+  add_executable(compiler src/compiler.cc)
 endif()
 
