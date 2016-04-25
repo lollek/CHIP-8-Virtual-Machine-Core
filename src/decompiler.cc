@@ -233,14 +233,20 @@ int main(int argc, char* argv[]) {
   }
 
   int line = 0x200;
-  while (file) {
+  for (;;) {
     int rhs;
     file.read(reinterpret_cast<char*>(&rhs), 1);
     int lhs;
     file.read(reinterpret_cast<char*>(&lhs), 1);
+
+    if (!file) {
+      break;
+    }
+
     describe_opcode(line, (rhs << 8) + lhs);
     line += 2;
   }
 
+  file.close();
   return 0;
 }
