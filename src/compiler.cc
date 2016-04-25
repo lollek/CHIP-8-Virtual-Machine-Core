@@ -101,49 +101,6 @@ void write_bins(char lhs, char rhs) {
 }
 
 
-void cls() { write_bins(0x00, 0xE0); }
-void ret() { write_bins(0x00, 0xEE); }
-void jmp() {
-  char lhs, rhs;
-  Token().make_nnn("JMP", lhs, rhs);
-  write_bins(0x10 + lhs, rhs);
-}
-void call() {
-  char lhs, rhs;
-  Token().make_nnn("CALL", lhs, rhs);
-  write_bins(0x20 + lhs, rhs);
-}
-void ifn() {
-  char xreg, nn;
-  Token::type t;
-  Token().make_reg("IFN", xreg);
-  Token().make_reg_or_nn("IFN", nn, t);
-  if (t == Token::NN) {
-    write_bins(0x30 + xreg, nn);
-  } else if (t == Token::REG) {
-    write_bins(0x50 + xreg, nn << 4);
-  } else {
-    exit_err("IFN: Unknown type\n");
-  }
-}
-void if_() {
-  char xreg, nn;
-  Token().make_reg("IF", xreg);
-  Token().make_nn("IF", nn);
-  write_bins(0x40 + xreg, nn);
-}
-void set() {
-  char xreg, nn;
-  Token().make_reg("SET", xreg);
-  Token().make_nn("SET", nn);
-  write_bins(0x60 + xreg, nn);
-}
-void add() {
-  char xreg, nn;
-  Token().make_reg("ADD", xreg);
-  Token().make_nn("ADD", nn);
-  write_bins(0x70 + xreg, nn);
-}
 
 int help(string program_name) {
   cerr
@@ -157,10 +114,74 @@ int help(string program_name) {
     << "IF rX NN   - 0x4XNN\n"
     << "IFN rX rY  - 0x5XY0\n"
     << "SET rX NN  - 0x6XNN\n"
-    << "ADD rX NN  - 0x7XNN\n";
+    << "ADD rX NN  - 0x7XNN\n"
+    << "SET rX rY  - 0x8XY0\n";
 
   return 1;
 }
+
+namespace op {
+
+void CLS() { write_bins(0x00, 0xE0); }
+
+void RET() { write_bins(0x00, 0xEE); }
+
+void JMP() {
+  char lhs, rhs;
+  Token().make_nnn("JMP", lhs, rhs);
+  write_bins(0x10 + lhs, rhs);
+}
+
+void CALL() {
+  char lhs, rhs;
+  Token().make_nnn("CALL", lhs, rhs);
+  write_bins(0x20 + lhs, rhs);
+}
+
+void IFN() {
+  char xreg, nn;
+  Token::type t;
+  Token().make_reg("IFN", xreg);
+  Token().make_reg_or_nn("IFN", nn, t);
+  if (t == Token::NN) {
+    write_bins(0x30 + xreg, nn);
+  } else if (t == Token::REG) {
+    write_bins(0x50 + xreg, nn << 4);
+  } else {
+    exit_err("IFN: Unknown type\n");
+  }
+}
+
+void IF() {
+  char xreg, nn;
+  Token().make_reg("IF", xreg);
+  Token().make_nn("IF", nn);
+  write_bins(0x40 + xreg, nn);
+}
+
+void SET() {
+  char xreg, nn;
+  Token::type t;
+  Token().make_reg("SET", xreg);
+  Token().make_reg_or_nn("SET", nn, t);
+  if (t == Token::NN) {
+    write_bins(0x60 + xreg, nn);
+  } else if (t == Token::REG) {
+    write_bins(0x80 + xreg, nn << 4);
+  } else {
+    exit_err("SET: Unknown type\n");
+  }
+}
+
+void ADD() {
+  char xreg, nn;
+  Token().make_reg("ADD", xreg);
+  Token().make_nn("ADD", nn);
+  write_bins(0x70 + xreg, nn);
+}
+
+} // op
+
 
 } // anonymous namespace
 
@@ -185,14 +206,14 @@ int main(int argc, char* argv[]) {
   }
 
   map<string const, function<void()>> const op2fun {
-    {"CLS",  cls},
-    {"RET",  ret},
-    {"JMP",  jmp},
-    {"CALL", call},
-    {"IFN",  ifn},
-    {"IF",   if_},
-    {"SET",   set},
-    {"ADD",   add},
+    {"CLS",  op::CLS},
+    {"RET",  op::RET},
+    {"JMP",  op::JMP},
+    {"CALL", op::CALL},
+    {"IFN",  op::IFN},
+    {"IF",   op::IF},
+    {"SET",  op::SET},
+    {"ADD",  op::ADD},
   };
 
 
