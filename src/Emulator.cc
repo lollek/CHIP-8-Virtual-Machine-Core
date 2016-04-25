@@ -1,19 +1,12 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
 
 #include "chip8core/Emulator.h"
-
-Emulator::FatalError::FatalError(std::string error_message) :
-  std::runtime_error(error_message) {
-}
-
-Emulator::NotImplementedError::NotImplementedError(std::string error_message) :
-  std::runtime_error(error_message) {
-}
 
 unsigned constexpr Emulator::ram_size;
 unsigned constexpr Emulator::num_registers;
@@ -118,8 +111,8 @@ bool Emulator::loadFileToRam(std::string const& filename) {
 
 halfword Emulator::fetchOpcode() {
   if (program_counter >= ram_size - 1) {
-    throw FatalError("Program counter out of bounds("
-                   + std::to_string(program_counter) + ")");
+    error_msg = "Program counter out of bounds";
+    return 0xFFFFU;
   }
 
   halfword opcode = (ram.at(program_counter) << 8) + ram.at(program_counter +1);
@@ -127,143 +120,170 @@ halfword Emulator::fetchOpcode() {
   return opcode;
 }
 
-void Emulator::handleOpcode0(halfword opcode) {
+bool Emulator::handleOpcode0(halfword opcode) {
   switch (opcode) {
 
     // 0x00E0 - Clears the screen
     case 0x00E0:
       std::fill(screen.begin(), screen.end(), 0);
       if (onGraphics != nullptr) { onGraphics(); }
-      break;
+      return true;
 
     // 0x00EE - Returns from subroutine
     case 0x00EE:
-      if (stack_pointer == 0) { throw FatalError("Stack underflow"); }
+      if (stack_pointer == 0) {
+        error_msg = "Stack underflow";
+        return false;
+      }
       program_counter = stack.at(--stack_pointer);
-      break;
+      return true;
 
     // 0x0NNN - Calls RCA 1802 program at address NNN.
-    default:
-      throw NotImplementedError("op0: " + std::to_string(opcode) + " not implemented");
+    default: {
+      std::stringstream ss;
+      ss << "Opcode " << std::hex << opcode << " not implemented";
+      error_msg = ss.str();
+      return false;
+    }
   }
 }
 
-inline void Emulator::handleOpcode1(halfword opcode) {
+inline bool Emulator::handleOpcode1(halfword opcode) {
   // 0x1NNN - Jump to opcode & 0x0FFF
   program_counter = op_nnn_value(opcode);
+  return true;
 }
 
-inline void Emulator::handleOpcode2(halfword opcode) {
+inline bool Emulator::handleOpcode2(halfword opcode) {
   // 0x2NNN - Call subroutine at opcode & 0x0FFF
-  if (stack_pointer >= stack_size) { throw FatalError("Stack overflow"); }
+  if (stack_pointer >= stack_size) {
+    error_msg = "Stack overflow";
+    return false;
+  }
   stack.at(stack_pointer++) = program_counter;
   program_counter = op_nnn_value(opcode);
+  return true;
 }
 
-inline void Emulator::handleOpcode3(halfword opcode) {
+inline bool Emulator::handleOpcode3(halfword opcode) {
   // 0x3XNN - Skips the next instruction if VX equals NN.
   if (vx_register(opcode) == op_nn_value(opcode)) { increment_pc(); }
+  return true;
 }
 
-inline void Emulator::handleOpcode4(halfword opcode) {
+inline bool Emulator::handleOpcode4(halfword opcode) {
   // 0x4XNN - Skips the next instruction if VX doesn't equal NN.
   if (vx_register(opcode) != op_nn_value(opcode)) { increment_pc(); }
+  return true;
 }
 
-inline void Emulator::handleOpcode5(halfword opcode) {
+inline bool Emulator::handleOpcode5(halfword opcode) {
   // 0x5XY0 - Skips the next instruction if VX equals VY
   // NOTE: At the moment, ignore the 0x000F value, but it's possible that this
   // should raise an error
   if (vx_register(opcode) == vy_register(opcode)) { increment_pc(); }
+  return true;
 }
 
-inline void Emulator::handleOpcode6(halfword opcode) {
+inline bool Emulator::handleOpcode6(halfword opcode) {
   // 0x6XNN - Set VX to NN
   vx_register(opcode) = op_nn_value(opcode);
+  return true;
 }
 
-inline void Emulator::handleOpcode7(halfword opcode) {
+inline bool Emulator::handleOpcode7(halfword opcode) {
   // 0x7XNN - Add NN to VX
   vx_register(opcode) += op_nn_value(opcode);
+  return true;
 }
 
-void Emulator::handleOpcode8(halfword opcode) {
+bool Emulator::handleOpcode8(halfword opcode) {
   switch (op_z_value(opcode)) {
 
     // 0x8XY0 - Set VX to VY
-    case 0x0000: vx_register(opcode) = vy_register(opcode); break;
+    case 0x0000: vx_register(opcode) = vy_register(opcode); return true;
 
     // 0x8XY1 - Set VX to VX OR VY
-    case 0x0001: vx_register(opcode) |= vy_register(opcode); break;
+    case 0x0001: vx_register(opcode) |= vy_register(opcode); return true;
 
     // 0x8XY2 - Set VX to VX AND VY
-    case 0x0002: vx_register(opcode) &= vy_register(opcode); break;
+    case 0x0002: vx_register(opcode) &= vy_register(opcode); return true;
 
     // 0x8XY3 - Set VX to VX XOR VY
-    case 0x0003: vx_register(opcode) ^= vy_register(opcode); break;
+    case 0x0003: vx_register(opcode) ^= vy_register(opcode); return true;
 
     // 0x8XY4 - Add VY to VX and set VF if there is a carry
     case 0x0004: {
       byte old_value = vx_register(opcode);
       vx_register(opcode) += vy_register(opcode);
       vf_register() = old_value > vx_register(opcode);
-    } break;
+      return true;
+    }
 
     // 0x8XY5 - Subtract VY from VX and set VF if there was no borrow
     case 0x0005: {
       byte old_value = vx_register(opcode);
       vx_register(opcode) -= vy_register(opcode);
       vf_register() = old_value >= vx_register(opcode);
-    } break;
+      return true;
+    }
 
     // 0x8XY6 - Shift VY to the right and copy it to VX
     // VF is set to the previous least significant bit
     case 0x0006:
       vf_register() = vy_register(opcode) & 1;
       vx_register(opcode) = vy_register(opcode) >>= 1;
-      break;
+      return true;
 
     // 0x8XY7 - Sets VX to VY minus VX. VF is set to 0 when there's a borrow, else 1
     case 0x0007:
       vx_register(opcode) = vy_register(opcode) - vx_register(opcode);
       vf_register() = vy_register(opcode) >= vx_register(opcode);
-      break;
+      return true;
 
     // 0x8XYE - Shifts VY left by one and copy it to VX.
     // VF is set to the most significant bit before the shift.
     case 0x000E:
       vf_register() = vy_register(opcode) & 0x80 ? 1 : 0;
       vx_register(opcode) = vy_register(opcode) <<= 1;
-      break;
+      return true;
 
-    default:
-      throw NotImplementedError("op8: " + std::to_string(opcode) + " not implemented");
+    default: {
+      std::stringstream ss;
+      ss << "Opcode " << std::hex << opcode << " not implemented";
+      error_msg = ss.str();
+      return false;
+    }
   }
 }
 
-inline void Emulator::handleOpcode9(halfword opcode) {
+inline bool Emulator::handleOpcode9(halfword opcode) {
   // 0x9XY0 - Skips the next instruction if VX doesn't equal VY.
   // NOTE: At the moment, ignore the 0x000F value, but it's possible that this
   // should raise an error
   if (vx_register(opcode) != vy_register(opcode)) { increment_pc(); }
+  return true;
 }
 
-inline void Emulator::handleOpcodeA(halfword opcode) {
+inline bool Emulator::handleOpcodeA(halfword opcode) {
   // 0xANNN - Sets I to the address NNN.
   index_register = op_nnn_value(opcode);
+  return true;
 }
 
-inline void Emulator::handleOpcodeB(halfword opcode) {
+inline bool Emulator::handleOpcodeB(halfword opcode) {
   // 0xBNNN - Jumps to the address NNN plus V[0].
   program_counter = (op_nnn_value(opcode) + registers.at(0)) % 0x1000;
+  return true;
 }
 
-void Emulator::handleOpcodeC(halfword opcode) {
+bool Emulator::handleOpcodeC(halfword opcode) {
   // 0xCXNN - Sets VX to a bitwise and operation on a random number and NN.
   vx_register(opcode) = (rand() % 0xFF) & op_nn_value(opcode);
+  return true;
 }
 
-void Emulator::handleOpcodeD(halfword opcode) {
+bool Emulator::handleOpcodeD(halfword opcode) {
   // 0xDXYN
   // Sprites stored in memory at location in index register (I), 8bits wide.
   // Wraps around the screen. If when drawn, clears a pixel, register VF is
@@ -308,55 +328,62 @@ void Emulator::handleOpcodeD(halfword opcode) {
   if (onGraphics != nullptr) {
     onGraphics();
   }
+
+  return true;
 }
 
-void Emulator::handleOpcodeE(halfword opcode) {
+bool Emulator::handleOpcodeE(halfword opcode) {
   switch (op_nn_value(opcode)) {
 
     // 0xEX9E - Skips the next instruction if the key stored in VX is pressed.
     case 0x009E:
       if (keys_state.at(vx_register(opcode)) != 0) { increment_pc(); }
-      break;
+      return true;
 
     // 0xEXA1 - Skips the next instruction if the key stored in VX isn't pressed.
     case 0x00A1:
       if (keys_state.at(vx_register(opcode)) == 0) { increment_pc(); }
-      break;
+      return true;
 
-    default:
-      throw NotImplementedError("opE: " + std::to_string(opcode) + " not implemented");
+    default: {
+      std::stringstream ss;
+      ss << "Opcode " << std::hex << opcode << " not implemented";
+      error_msg = ss.str();
+      return false;
+    }
   }
 }
 
-void Emulator::handleOpcodeF(halfword opcode) {
+bool Emulator::handleOpcodeF(halfword opcode) {
   switch (op_nn_value(opcode)) {
 
     // 0xFX07 - Sets VX to the value of the delay timer.
-    case 0x0007: vx_register(opcode) = delay_timer; break;
+    case 0x0007: vx_register(opcode) = delay_timer; return true;
 
     // 0xFX0A - A key press is awaited, and then stored in VX.
     case 0x000A:
       awaiting_keypress = true;
       awaiting_keypress_register = op_x_value(opcode);
-      break;
+      return true;
 
     // 0xFX15 - Sets the delay timer to VX.
-    case 0x0015: delay_timer = vx_register(opcode); break;
+    case 0x0015: delay_timer = vx_register(opcode); return true;
 
     // 0xFX18 - Sets the sound timer to VX.
-    case 0x0018: sound_timer = vx_register(opcode); break;
+    case 0x0018: sound_timer = vx_register(opcode); return true;
 
     // 0xFX1E - Adds VX to I. Also secretly sets VF to 1 on overflow else 0
     case 0x001E: {
       byte old_index = index_register;
       index_register = (index_register + vx_register(opcode)) % 0x1000;
       vf_register() = old_index > index_register;
-    } break;
+      return true;
+    }
 
     // 0xFX29 - Sets I to the location of the sprite for the character in VX.
     // Characters 0-F (in hexadecimal) are represented by a 4x5 font.
     // ( I have stored these fonts in the RAM, byte 0 and forward )
-    case 0x0029: index_register = vx_register(opcode) * 5; break;
+    case 0x0029: index_register = vx_register(opcode) * 5; return true;
 
     // 0xFX33
     // Stores the Binary-coded decimal representation of VX, with the most
@@ -370,7 +397,8 @@ void Emulator::handleOpcodeF(halfword opcode) {
       ram.at(index_register + 0) = value / 100;
       ram.at(index_register + 1) = value / 10 % 10;
       ram.at(index_register + 2) = value % 10;
-    } break;
+      return true;
+    }
 
     // 0xFX55 - Stores V0 to VX in memory starting at address I.
     // Also sets I to I + X + 1
@@ -379,7 +407,8 @@ void Emulator::handleOpcodeF(halfword opcode) {
       for (halfword i = 0; i <= end; ++i) {
         ram.at(index_register++) = registers.at(i);
       }
-    } break;
+      return true;
+    }
 
     // 0xFX65 - Fills V0 to VX with values from memory starting at address I
     // Also sets I to I + X + 1
@@ -388,33 +417,37 @@ void Emulator::handleOpcodeF(halfword opcode) {
       for (halfword i = 0; i <= end; ++i) {
         registers.at(i) = ram.at(index_register++);
       }
-    } break;
+      return true;
+    }
 
-    default:
-      throw NotImplementedError("opF: " + std::to_string(opcode) + " not implemented");
+    default: {
+      std::stringstream ss;
+      ss << "Opcode " << std::hex << opcode << " not implemented";
+      error_msg = ss.str();
+      return false;
+    }
   }
 }
 
-void Emulator::handleOpcode(halfword opcode) {
-  /* https://en.wikipedia.org/wiki/CHIP-8#Virtual_machine_description */
-
+bool Emulator::handleOpcode(halfword opcode) {
   switch (opcode & 0xF000) {
-    case 0x0000: handleOpcode0(opcode); break;
-    case 0x1000: handleOpcode1(opcode); break;
-    case 0x2000: handleOpcode2(opcode); break;
-    case 0x3000: handleOpcode3(opcode); break;
-    case 0x4000: handleOpcode4(opcode); break;
-    case 0x5000: handleOpcode5(opcode); break;
-    case 0x6000: handleOpcode6(opcode); break;
-    case 0x7000: handleOpcode7(opcode); break;
-    case 0x8000: handleOpcode8(opcode); break;
-    case 0x9000: handleOpcode9(opcode); break;
-    case 0xA000: handleOpcodeA(opcode); break;
-    case 0xB000: handleOpcodeB(opcode); break;
-    case 0xC000: handleOpcodeC(opcode); break;
-    case 0xD000: handleOpcodeD(opcode); break;
-    case 0xE000: handleOpcodeE(opcode); break;
-    case 0xF000: handleOpcodeF(opcode); break;
+    case 0x0000: return handleOpcode0(opcode);
+    case 0x1000: return handleOpcode1(opcode);
+    case 0x2000: return handleOpcode2(opcode);
+    case 0x3000: return handleOpcode3(opcode);
+    case 0x4000: return handleOpcode4(opcode);
+    case 0x5000: return handleOpcode5(opcode);
+    case 0x6000: return handleOpcode6(opcode);
+    case 0x7000: return handleOpcode7(opcode);
+    case 0x8000: return handleOpcode8(opcode);
+    case 0x9000: return handleOpcode9(opcode);
+    case 0xA000: return handleOpcodeA(opcode);
+    case 0xB000: return handleOpcodeB(opcode);
+    case 0xC000: return handleOpcodeC(opcode);
+    case 0xD000: return handleOpcodeD(opcode);
+    case 0xE000: return handleOpcodeE(opcode);
+    case 0xF000: return handleOpcodeF(opcode);
+    default:     return false;
   }
 }
 
@@ -452,14 +485,14 @@ inline void Emulator::increment_pc() {
 }
 
 
-void Emulator::tick() {
+bool Emulator::tick() {
   if (awaiting_keypress || tick_lock) {
-    return;
+    return true;
   }
   tick_lock = true;
 
   halfword opcode = fetchOpcode();
-  handleOpcode(opcode);
+  bool return_value = handleOpcode(opcode);
 
   if (delay_timer > 0) {
     --delay_timer;
@@ -472,4 +505,5 @@ void Emulator::tick() {
   }
 
   tick_lock = false;
+  return return_value;
 }

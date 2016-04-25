@@ -12,19 +12,30 @@ TEST_F(EmulatorFetchOpcode, DefaultNoData) {
 }
 
 TEST_F(EmulatorFetchOpcode, OutsideRAM) {
+  error_msg = "";
   program_counter = -2;
   ASSERT_EQ(static_cast<uint16_t>(-2), program_counter);
-  ASSERT_THROW(fetchOpcode(), FatalError);
+  ASSERT_EQ(0xFFFFU, fetchOpcode());
+  ASSERT_EQ("Program counter out of bounds", error_msg);
+
+  error_msg = "";
+  program_counter = -1;
+  ASSERT_EQ(0xFFFFU, fetchOpcode());
+  ASSERT_EQ("Program counter out of bounds", error_msg);
 }
 
 TEST_F(EmulatorFetchOpcode, JustPastRam) {
+  error_msg = "";
   program_counter = 4096;
   ASSERT_EQ(4096, program_counter);
-  ASSERT_THROW(fetchOpcode(), FatalError);
+  ASSERT_EQ(0xFFFFU, fetchOpcode());
+  ASSERT_EQ("Program counter out of bounds", error_msg);
 
+  error_msg = "";
   program_counter = 4095;
   ASSERT_EQ(4095, program_counter);
-  ASSERT_THROW(fetchOpcode(), FatalError);
+  ASSERT_EQ(0xFFFFU, fetchOpcode());
+  ASSERT_EQ("Program counter out of bounds", error_msg);
 }
 
 TEST_F(EmulatorFetchOpcode, JustInsideRAMLoops) {

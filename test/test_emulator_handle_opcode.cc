@@ -17,14 +17,18 @@ TEST_F(EmulatorHandleOpcode, OP_0x00E0) {
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0x00EE) {
+  error_msg = "";
   ASSERT_EQ(0U, stack_pointer);
   ASSERT_EQ(0U, stack.at(stack_pointer));
-  ASSERT_THROW(handleOpcode(0x00EE), FatalError);
+  ASSERT_EQ(false, handleOpcode(0x00EE));
+  ASSERT_EQ("Stack underflow", error_msg);
 
+  error_msg = "";
   stack.at(stack_pointer) = 1337U;
   ++stack_pointer;
   ASSERT_EQ(0x200U, program_counter);
-  handleOpcode(0x00EE);
+  ASSERT_EQ(true, handleOpcode(0x00EE));
+  ASSERT_EQ("", error_msg);
   ASSERT_EQ(1337U, program_counter);
   ASSERT_EQ(0U, stack_pointer);
   ASSERT_EQ(1337U, stack.at(stack_pointer));
@@ -32,7 +36,7 @@ TEST_F(EmulatorHandleOpcode, OP_0x00EE) {
 
 TEST_F(EmulatorHandleOpcode, OP_0x1NNN) {
   for (halfword op = 0x1000; op < 0x2000; ++op) {
-    handleOpcode(op);
+    ASSERT_EQ(true, handleOpcode(op));
     ASSERT_EQ(op - 0x1000, program_counter);
   }
 }
@@ -46,13 +50,15 @@ TEST_F(EmulatorHandleOpcode, OP_0x2NNN) {
     if (stack_pointer < stack_size - 1) {
       halfword last_program_counter = program_counter;
       ASSERT_EQ(op % stack_size, stack_pointer);
-      handleOpcode(op);
+      ASSERT_EQ(true, handleOpcode(op));
       ASSERT_EQ(stack.at(stack_pointer -1), last_program_counter);
 
     /* Every 16th op we try a stack overflow instead */
     } else {
       ++stack_pointer;
-      ASSERT_THROW(handleOpcode(op), FatalError);
+      error_msg = "";
+      ASSERT_EQ(false, handleOpcode(op));
+      ASSERT_EQ("Stack overflow", error_msg);
       stack_pointer = 0;
     }
   }
@@ -64,9 +70,9 @@ TEST_F(EmulatorHandleOpcode, OP_0x3XNN) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     program_counter = 0x200;
     registers.at(i) = i;
-    handleOpcode(0x3000 + (i << 8) + i);
+    ASSERT_EQ(true, handleOpcode(0x3000 + (i << 8) + i));
     ASSERT_EQ(0x202, program_counter);
-    handleOpcode(0x3000 + (i << 8) + i + 1);
+    ASSERT_EQ(true, handleOpcode(0x3000 + (i << 8) + i + 1));
     ASSERT_EQ(0x202, program_counter);
   }
 }
@@ -77,9 +83,9 @@ TEST_F(EmulatorHandleOpcode, OP_0x4XNN) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     program_counter = 0x200;
     registers.at(i) = i;
-    handleOpcode(0x4000 + (i << 8) + i);
+    ASSERT_EQ(true, handleOpcode(0x4000 + (i << 8) + i));
     ASSERT_EQ(0x200, program_counter);
-    handleOpcode(0x4000 + (i << 8) + i + 1);
+    ASSERT_EQ(true, handleOpcode(0x4000 + (i << 8) + i + 1));
     ASSERT_EQ(0x202, program_counter);
   }
 }
@@ -90,23 +96,23 @@ TEST_F(EmulatorHandleOpcode, OP_0x5XY0) {
   registers.at(0) = 42;
   registers.at(1) = 42;
 
-  handleOpcode(0x5010);
+  ASSERT_EQ(true, handleOpcode(0x5010));
   ASSERT_EQ(0x202, program_counter);
-  handleOpcode(0x5100);
+  ASSERT_EQ(true, handleOpcode(0x5100));
   ASSERT_EQ(0x204, program_counter);
 
-  handleOpcode(0x5000);
+  ASSERT_EQ(true, handleOpcode(0x5000));
   ASSERT_EQ(0x206, program_counter);
-  handleOpcode(0x5110);
+  ASSERT_EQ(true, handleOpcode(0x5110));
   ASSERT_EQ(0x208, program_counter);
-  handleOpcode(0x5130);
+  ASSERT_EQ(true, handleOpcode(0x5130));
   ASSERT_EQ(0x208, program_counter);
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0x6XNN) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(0U, registers.at(i));
-    handleOpcode(0x6000 + (i << 8) + i + 5);
+    ASSERT_EQ(true, handleOpcode(0x6000 + (i << 8) + i + 5));
     ASSERT_EQ(i + 5, registers.at(i));
   }
 }
@@ -114,9 +120,9 @@ TEST_F(EmulatorHandleOpcode, OP_0x6XNN) {
 TEST_F(EmulatorHandleOpcode, OP_0x7XNN) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(0U, registers.at(i));
-    handleOpcode(0x7000 + (i << 8) + i + 5);
+    ASSERT_EQ(true, handleOpcode(0x7000 + (i << 8) + i + 5));
     ASSERT_EQ(i + 5, registers.at(i));
-    handleOpcode(0x7000 + (i << 8) + 1);
+    ASSERT_EQ(true, handleOpcode(0x7000 + (i << 8) + 1));
     ASSERT_EQ(i + 6, registers.at(i));
   }
 }
@@ -127,7 +133,7 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY0) {
 
   for (unsigned i = 1; i < registers.size(); ++i) {
     ASSERT_EQ(0U, registers.at(i));
-    handleOpcode(0x8000 + (i << 8) + ((i - 1) << 4));
+    ASSERT_EQ(true, handleOpcode(0x8000 + (i << 8) + ((i - 1) << 4)));
     ASSERT_EQ(255U, registers.at(i));
   }
 }
@@ -138,13 +144,13 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY1) {
 
   for (unsigned i = 1; i < registers.size(); ++i) {
     ASSERT_EQ(0U, registers.at(i));
-    handleOpcode(0x8001 + (i << 8) + ((i - 1) << 4));
+    ASSERT_EQ(true, handleOpcode(0x8001 + (i << 8) + ((i - 1) << 4)));
     ASSERT_EQ(255U, registers.at(i));
   }
 
   registers.at(0) = 0xF0;
   registers.at(1) = 0x0F;
-  handleOpcode(0x8011);
+  ASSERT_EQ(true, handleOpcode(0x8011));
   ASSERT_EQ(255U, registers.at(0));
 }
 
@@ -154,32 +160,32 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY2) {
 
   for (unsigned i = 1; i < registers.size(); ++i) {
     ASSERT_EQ(0U, registers.at(i));
-    handleOpcode(0x8002 + (i << 8) + ((i - 1) << 4));
+    ASSERT_EQ(true, handleOpcode(0x8002 + (i << 8) + ((i - 1) << 4)));
     ASSERT_EQ(0, registers.at(i));
   }
 
   registers.at(0) = 0xF0;
   registers.at(1) = 0x0F;
-  handleOpcode(0x8012);
+  ASSERT_EQ(true, handleOpcode(0x8012));
   ASSERT_EQ(0U, registers.at(0));
 
   registers.at(0) = 0xF0;
   registers.at(1) = 0x3F;
-  handleOpcode(0x8012);
+  ASSERT_EQ(true, handleOpcode(0x8012));
   ASSERT_EQ(0x30U, registers.at(0));
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0x8XY3) {
-  handleOpcode(0x8003);
+  ASSERT_EQ(true, handleOpcode(0x8003));
   ASSERT_EQ(0U, registers.at(0));
 
   registers.at(1) = 0xF0;
-  handleOpcode(0x8113);
+  ASSERT_EQ(true, handleOpcode(0x8113));
   ASSERT_EQ(0U, registers.at(1));
 
   registers.at(2) = 0xF0;
   registers.at(3) = 0x3F;
-  handleOpcode(0x8233);
+  ASSERT_EQ(true, handleOpcode(0x8233));
   ASSERT_EQ(0xCF, registers.at(2));
   ASSERT_EQ(0x3F, registers.at(3));
 }
@@ -189,19 +195,19 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY4) {
 
   registers.at(0) = 10;
   registers.at(1) = 20;
-  handleOpcode(0x8014);
+  ASSERT_EQ(true, handleOpcode(0x8014));
   ASSERT_EQ(30, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
   registers.at(2) = 255;
   registers.at(3) = 255;
-  handleOpcode(0x8234);
+  ASSERT_EQ(true, handleOpcode(0x8234));
   ASSERT_EQ(254, registers.at(2));
   ASSERT_EQ(1, registers.at(0xF));
 
   registers.at(4) = 1;
   registers.at(5) = 255;
-  handleOpcode(0x8454);
+  ASSERT_EQ(true, handleOpcode(0x8454));
   ASSERT_EQ(0, registers.at(4));
   ASSERT_EQ(1, registers.at(0xF));
 }
@@ -211,25 +217,25 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY5) {
 
   registers.at(0) = 10;
   registers.at(1) = 20;
-  handleOpcode(0x8015);
+  ASSERT_EQ(true, handleOpcode(0x8015));
   ASSERT_EQ(246, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
   registers.at(2) = 255;
   registers.at(3) = 255;
-  handleOpcode(0x8235);
+  ASSERT_EQ(true, handleOpcode(0x8235));
   ASSERT_EQ(0, registers.at(2));
   ASSERT_EQ(1, registers.at(0xF));
 
   registers.at(4) = 1;
   registers.at(5) = 255;
-  handleOpcode(0x8455);
+  ASSERT_EQ(true, handleOpcode(0x8455));
   ASSERT_EQ(2, registers.at(4));
   ASSERT_EQ(0, registers.at(0xF));
 
   registers.at(6) = 1;
   registers.at(7) = 0;
-  handleOpcode(0x8675);
+  ASSERT_EQ(true, handleOpcode(0x8675));
   ASSERT_EQ(1, registers.at(6));
   ASSERT_EQ(1, registers.at(0xF));
 }
@@ -237,20 +243,20 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY5) {
 TEST_F(EmulatorHandleOpcode, OP_0x8XY6) {
   registers.at(0xF) = 255;
   registers.at(0) = 1;
-  handleOpcode(0x8006);
+  ASSERT_EQ(true, handleOpcode(0x8006));
   ASSERT_EQ(0, registers.at(0));
   ASSERT_EQ(1, registers.at(0xF));
 
   registers.at(0xF) = 255;
   registers.at(0) = 2;
-  handleOpcode(0x8006);
+  ASSERT_EQ(true, handleOpcode(0x8006));
   ASSERT_EQ(1, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
   registers.at(0xF) = 255;
   registers.at(0) = 4;
   registers.at(1) = 2;
-  handleOpcode(0x8016);
+  ASSERT_EQ(true, handleOpcode(0x8016));
   ASSERT_EQ(1, registers.at(0));
   ASSERT_EQ(1, registers.at(1));
   ASSERT_EQ(0, registers.at(0xF));
@@ -260,14 +266,14 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY7) {
   registers.at(0xF) = 255;
   registers.at(0) = 0;
   registers.at(1) = 1;
-  handleOpcode(0x8017);
+  ASSERT_EQ(true, handleOpcode(0x8017));
   ASSERT_EQ(1, registers.at(0));
   ASSERT_EQ(1, registers.at(1));
   ASSERT_EQ(1, registers.at(0xF));
 
   registers.at(0) = 1;
   registers.at(1) = 0;
-  handleOpcode(0x8017);
+  ASSERT_EQ(true, handleOpcode(0x8017));
   ASSERT_EQ(255, registers.at(0));
   ASSERT_EQ(0, registers.at(1));
   ASSERT_EQ(0, registers.at(0xF));
@@ -276,20 +282,20 @@ TEST_F(EmulatorHandleOpcode, OP_0x8XY7) {
 TEST_F(EmulatorHandleOpcode, OP_0x8XYE) {
   registers.at(0xF) = 255;
   registers.at(0) = 0;
-  handleOpcode(0x800E);
+  ASSERT_EQ(true, handleOpcode(0x800E));
   ASSERT_EQ(0, registers.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
   registers.at(1) = 0;
   registers.at(0) = 0x80;
-  handleOpcode(0x810E);
+  ASSERT_EQ(true, handleOpcode(0x810E));
   ASSERT_EQ(0, registers.at(0));
   ASSERT_EQ(0, registers.at(1));
   ASSERT_EQ(1, registers.at(0xF));
 
   registers.at(0) = 0x70;
   registers.at(2) = 0x50;
-  handleOpcode(0x820E);
+  ASSERT_EQ(true, handleOpcode(0x820E));
   ASSERT_EQ(0xE0, registers.at(0));
   ASSERT_EQ(0xE0, registers.at(2));
   ASSERT_EQ(0, registers.at(0xF));
@@ -299,49 +305,49 @@ TEST_F(EmulatorHandleOpcode, OP_0x9XY0) {
   ASSERT_EQ(0x200, program_counter);
   registers.at(0) = 42;
   registers.at(1) = 43;
-  handleOpcode(0x9010);
+  ASSERT_EQ(true, handleOpcode(0x9010));
   ASSERT_EQ(0x202, program_counter);
 
   registers.at(2) = 255;
-  handleOpcode(0x9210);
+  ASSERT_EQ(true, handleOpcode(0x9210));
   ASSERT_EQ(0x204, program_counter);
 
   ASSERT_EQ(0x204, program_counter);
-  handleOpcode(0x9000);
-  handleOpcode(0x9110);
-  handleOpcode(0x9220);
-  handleOpcode(0x9330);
-  handleOpcode(0x9440);
-  handleOpcode(0x9550);
-  handleOpcode(0x9660);
-  handleOpcode(0x9770);
-  handleOpcode(0x9880);
-  handleOpcode(0x9990);
-  handleOpcode(0x9AA0);
-  handleOpcode(0x9BB0);
-  handleOpcode(0x9CC0);
-  handleOpcode(0x9DD0);
-  handleOpcode(0x9EE0);
-  handleOpcode(0x9FF0);
+  ASSERT_EQ(true, handleOpcode(0x9000));
+  ASSERT_EQ(true, handleOpcode(0x9110));
+  ASSERT_EQ(true, handleOpcode(0x9220));
+  ASSERT_EQ(true, handleOpcode(0x9330));
+  ASSERT_EQ(true, handleOpcode(0x9440));
+  ASSERT_EQ(true, handleOpcode(0x9550));
+  ASSERT_EQ(true, handleOpcode(0x9660));
+  ASSERT_EQ(true, handleOpcode(0x9770));
+  ASSERT_EQ(true, handleOpcode(0x9880));
+  ASSERT_EQ(true, handleOpcode(0x9990));
+  ASSERT_EQ(true, handleOpcode(0x9AA0));
+  ASSERT_EQ(true, handleOpcode(0x9BB0));
+  ASSERT_EQ(true, handleOpcode(0x9CC0));
+  ASSERT_EQ(true, handleOpcode(0x9DD0));
+  ASSERT_EQ(true, handleOpcode(0x9EE0));
+  ASSERT_EQ(true, handleOpcode(0x9FF0));
   ASSERT_EQ(0x204, program_counter);
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xANNN) {
   for (unsigned i = 0; i < 0x1000; ++i) {
-    handleOpcode(0xA000 + i);
+    ASSERT_EQ(true, handleOpcode(0xA000 + i));
     ASSERT_EQ(i, index_register);
   }
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xBNNN) {
   for (unsigned i = 0; i < 0x1000; ++i) {
-    handleOpcode(0xB000 + i);
+    ASSERT_EQ(true, handleOpcode(0xB000 + i));
     ASSERT_EQ(i, program_counter);
   }
 
   registers.at(0) = 200;
   for (unsigned i = 0; i < 0x1000; ++i) {
-    handleOpcode(0xB000 + i);
+    ASSERT_EQ(true, handleOpcode(0xB000 + i));
     ASSERT_EQ((i + 200) % 0x1000, program_counter);
   }
 }
@@ -349,13 +355,13 @@ TEST_F(EmulatorHandleOpcode, OP_0xBNNN) {
 TEST_F(EmulatorHandleOpcode, OP_0xCXNN) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = 42;
-    handleOpcode(0xC000 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xC000 + (i << 8)));
     ASSERT_EQ(0U, registers.at(i));
   }
 
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = 255;
-    handleOpcode(0xC00F + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xC00F + (i << 8)));
     ASSERT_TRUE(0xF >= registers.at(i));
   }
 }
@@ -368,12 +374,12 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
 
   /* Draw a byte-aligned line at the corner */
   ASSERT_EQ(0U, screen.at(0));
-  handleOpcode(0xD001);
+  ASSERT_EQ(true, handleOpcode(0xD001));
   ASSERT_EQ(0x12, screen.at(0));
   ASSERT_EQ(0, registers.at(0xF));
 
   /* Drawing the exact same byte should reverse the drawing */
-  handleOpcode(0xD001);
+  ASSERT_EQ(true, handleOpcode(0xD001));
   ASSERT_EQ(0U, screen.at(0));
   ASSERT_EQ(1, registers.at(0xF));
 
@@ -388,7 +394,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ASSERT_EQ(0U, screen.at(1 + (4 * screen_columns)));
   registers.at(0) = 4;
   registers.at(1) = 1;
-  handleOpcode(0xD014);
+  ASSERT_EQ(true, handleOpcode(0xD014));
   ASSERT_EQ(0x01, screen.at(0 + (1 * screen_columns)));
   ASSERT_EQ(0x20, screen.at(1 + (1 * screen_columns)));
   ASSERT_EQ(0x03, screen.at(0 + (2 * screen_columns)));
@@ -400,7 +406,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   ASSERT_EQ(0, registers.at(0xF));
 
   /* Remove them */
-  handleOpcode(0xD014);
+  ASSERT_EQ(true, handleOpcode(0xD014));
   ASSERT_EQ(0U, screen.at(0 + (1 * screen_columns)));
   ASSERT_EQ(0U, screen.at(1 + (1 * screen_columns)));
   ASSERT_EQ(0U, screen.at(0 + (2 * screen_columns)));
@@ -418,7 +424,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xDXYN) {
   registers.at(5) = screen_rows -1;
   ASSERT_EQ(0x00, screen.at((screen_columns - 1) + ((screen_rows - 1) * screen_columns)));
   ASSERT_EQ(0x00, screen.at(0));
-  handleOpcode(0xD451);
+  ASSERT_EQ(true, handleOpcode(0xD451));
 
   ram.at(index_register) = 0x00;
   ASSERT_EQ(0x01, screen.at((screen_columns - 1) + ((screen_rows - 1) * screen_columns)));
@@ -433,14 +439,14 @@ TEST_F(EmulatorHandleOpcode, OP_0xEX9E) {
 
   for (unsigned i= 0; i < 16; ++i) {
     keys_state.at(i) = 1;
-    handleOpcode(0xE09E + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xE09E + (i << 8)));
     current_pc += 2;
     ASSERT_EQ(current_pc, program_counter);
   }
 
   for (unsigned i= 0; i < 16; ++i) {
     keys_state.at(i) = 0;
-    handleOpcode(0xE09E + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xE09E + (i << 8)));
     ASSERT_EQ(current_pc, program_counter);
   }
 }
@@ -451,14 +457,14 @@ TEST_F(EmulatorHandleOpcode, OP_0xEXA1) {
 
   for (unsigned i= 0; i < 16; ++i) {
     keys_state.at(i) = 0;
-    handleOpcode(0xE0A1 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xE0A1 + (i << 8)));
     current_pc += 2;
     ASSERT_EQ(current_pc, program_counter);
   }
 
   for (unsigned i= 0; i < 16; ++i) {
     keys_state.at(i) = 1;
-    handleOpcode(0xE0A1 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xE0A1 + (i << 8)));
     ASSERT_EQ(current_pc, program_counter);
   }
 }
@@ -466,19 +472,40 @@ TEST_F(EmulatorHandleOpcode, OP_0xEXA1) {
 TEST_F(EmulatorHandleOpcode, OP_0xFX07) {
   delay_timer = 57U;
   for (unsigned i = 0; i < registers.size(); ++i) {
-    handleOpcode(0xF007 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xF007 + (i << 8)));
     ASSERT_EQ(57U, registers.at(i));
   }
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX0A) {
-  /* ASSERT_THROW(handleOpcode(0xF00A), NotImplementedError); */
+  awaiting_keypress = false;
+  awaiting_keypress_register = 0;
+  registers.at(9) = 9;
+
+  // Sets awaiting keypress
+  ASSERT_EQ(true, handleOpcode(0xF90A));
+  ASSERT_EQ(true, awaiting_keypress);
+  ASSERT_EQ(9U, awaiting_keypress_register);
+
+  // Cannot exec other opcodes
+  halfword pc = program_counter;
+  ASSERT_EQ(true, tick());
+  ASSERT_EQ(pc, program_counter);
+
+  // Keypress releases the awaiting-keypress-mode
+  setKeyState(1, true);
+  ASSERT_EQ(1, registers.at(9));
+  ASSERT_EQ(false, awaiting_keypress);
+
+  // Can exec other opcodes
+  ASSERT_EQ(true, handleOpcode(0x1234));
+  ASSERT_EQ(0x234U, program_counter);
 }
 
 TEST_F(EmulatorHandleOpcode, OP_0xFX15) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = i;
-    handleOpcode(0xF015 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xF015 + (i << 8)));
     ASSERT_EQ(i, delay_timer);
   }
 }
@@ -486,7 +513,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX15) {
 TEST_F(EmulatorHandleOpcode, OP_0xFX18) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = i;
-    handleOpcode(0xF018 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xF018 + (i << 8)));
     ASSERT_EQ(i, sound_timer);
   }
 }
@@ -494,18 +521,18 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX18) {
 TEST_F(EmulatorHandleOpcode, OP_0xFX1E) {
   ASSERT_EQ(0U, index_register);
   registers.at(0) = 10;
-  handleOpcode(0xF01E);
+  ASSERT_EQ(true, handleOpcode(0xF01E));
   ASSERT_EQ(10U, index_register);
   ASSERT_EQ(0U, registers.at(0xF));
 
   registers.at(1) = 255;
-  handleOpcode(0xF11E);
+  ASSERT_EQ(true, handleOpcode(0xF11E));
   ASSERT_EQ(265U, index_register);
   ASSERT_EQ(0U, registers.at(0xF));
 
   index_register = 0x0FFF;
   registers.at(2) = 1;
-  handleOpcode(0xF21E);
+  ASSERT_EQ(true, handleOpcode(0xF21E));
   ASSERT_EQ(0U, index_register);
   ASSERT_EQ(1U, registers.at(0xF));
 }
@@ -513,7 +540,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX1E) {
 TEST_F(EmulatorHandleOpcode, OP_0xFX29) {
   for (unsigned i = 0; i < registers.size(); ++i) {
     registers.at(i) = i;
-    handleOpcode(0xf029 + (i << 8));
+    ASSERT_EQ(true, handleOpcode(0xf029 + (i << 8)));
     ASSERT_EQ(5 * i, index_register);
   }
 }
@@ -525,7 +552,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
   ASSERT_EQ(0U, ram.at(index_register + 1));
   ASSERT_EQ(0U, ram.at(index_register + 2));
 
-  handleOpcode(0xF033);
+  ASSERT_EQ(true, handleOpcode(0xF033));
   ASSERT_EQ(1U, ram.at(index_register + 0));
   ASSERT_EQ(5U, ram.at(index_register + 1));
   ASSERT_EQ(9U, ram.at(index_register + 2));
@@ -539,7 +566,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
   ASSERT_EQ(0U, ram.at(index_register + 1));
   ASSERT_EQ(0U, ram.at(index_register + 2));
 
-  handleOpcode(0xF033);
+  ASSERT_EQ(true, handleOpcode(0xF033));
   ASSERT_EQ(0U, ram.at(index_register + 0));
   ASSERT_EQ(5U, ram.at(index_register + 1));
   ASSERT_EQ(9U, ram.at(index_register + 2));
@@ -553,7 +580,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX33) {
   ASSERT_EQ(0U, ram.at(index_register + 1));
   ASSERT_EQ(0U, ram.at(index_register + 2));
 
-  handleOpcode(0xF033);
+  ASSERT_EQ(true, handleOpcode(0xF033));
   ASSERT_EQ(0U, ram.at(index_register + 0));
   ASSERT_EQ(0U, ram.at(index_register + 1));
   ASSERT_EQ(9U, ram.at(index_register + 2));
@@ -573,7 +600,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
   ASSERT_EQ(0U, ram.at(index_register));
 
   halfword previous_index = index_register;
-  handleOpcode(0xF155);
+  ASSERT_EQ(true, handleOpcode(0xF155));
   ASSERT_EQ(1U, registers.at(0));
   ASSERT_EQ(1U, ram.at(previous_index));
   ASSERT_EQ(2U, ram.at(previous_index + 1));
@@ -581,7 +608,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
   ASSERT_EQ(previous_index + 1 + 1, index_register);
 
   index_register = previous_index;
-  handleOpcode(0xF255);
+  ASSERT_EQ(true, handleOpcode(0xF255));
   ASSERT_EQ(1U, ram.at(previous_index));
   ASSERT_EQ(2U, ram.at(previous_index + 1));
   ASSERT_EQ(3U, ram.at(previous_index + 2));
@@ -590,7 +617,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX55) {
 
   index_register = previous_index;
 
-  handleOpcode(0xFF55);
+  ASSERT_EQ(true, handleOpcode(0xFF55));
   for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(i + 1, ram.at(previous_index + i));
   }
@@ -609,7 +636,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX65) {
   ASSERT_EQ(0U, registers.at(0));
 
   halfword previous_index = index_register;
-  handleOpcode(0xF165);
+  ASSERT_EQ(true, handleOpcode(0xF165));
   ASSERT_EQ(1U, ram.at(previous_index));
   ASSERT_EQ(1U, registers.at(0));
   ASSERT_EQ(2U, registers.at(1));
@@ -617,7 +644,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX65) {
   ASSERT_EQ(index_register, previous_index + 1 + 1);
 
   index_register = previous_index;
-  handleOpcode(0xF265);
+  ASSERT_EQ(true, handleOpcode(0xF265));
   ASSERT_EQ(1U, registers.at(0));
   ASSERT_EQ(2U, registers.at(1));
   ASSERT_EQ(3U, registers.at(2));
@@ -625,7 +652,7 @@ TEST_F(EmulatorHandleOpcode, OP_0xFX65) {
   ASSERT_EQ(index_register, previous_index + 2 + 1);
 
   index_register = previous_index;
-  handleOpcode(0xFF65);
+  ASSERT_EQ(true, handleOpcode(0xFF65));
   for (unsigned i = 0; i < registers.size(); ++i) {
     ASSERT_EQ(i + 1, registers.at(i));
   }

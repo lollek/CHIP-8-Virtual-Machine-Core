@@ -52,8 +52,9 @@ public:
 
   /**
    * Tell the emulated CPU to process one clock cycle
+   * Returns false on error, and sets error to getError()
    */
-  void tick();
+  bool tick();
 
   /**
    * Loads file with filename into RAM.
@@ -71,37 +72,26 @@ public:
   unsigned static constexpr num_keys = 16;
   halfword static constexpr program_counter_start = 0x200;
 
-  class FatalError : public std::runtime_error {
-  public:
-    FatalError(std::string error_message);
-  };
-
-  class NotImplementedError : public std::runtime_error {
-  public:
-    NotImplementedError(std::string error_message);
-  };
-
-
 protected:
   halfword fetchOpcode();
 
-  void handleOpcode(halfword opcode);
-  void handleOpcode0(halfword opcode);
-  void handleOpcode1(halfword opcode);
-  void handleOpcode2(halfword opcode);
-  void handleOpcode3(halfword opcode);
-  void handleOpcode4(halfword opcode);
-  void handleOpcode5(halfword opcode);
-  void handleOpcode6(halfword opcode);
-  void handleOpcode7(halfword opcode);
-  void handleOpcode8(halfword opcode);
-  void handleOpcode9(halfword opcode);
-  void handleOpcodeA(halfword opcode);
-  void handleOpcodeB(halfword opcode);
-  void handleOpcodeC(halfword opcode);
-  void handleOpcodeD(halfword opcode);
-  void handleOpcodeE(halfword opcode);
-  void handleOpcodeF(halfword opcode);
+  bool handleOpcode(halfword opcode);
+  bool handleOpcode0(halfword opcode);
+  bool handleOpcode1(halfword opcode);
+  bool handleOpcode2(halfword opcode);
+  bool handleOpcode3(halfword opcode);
+  bool handleOpcode4(halfword opcode);
+  bool handleOpcode5(halfword opcode);
+  bool handleOpcode6(halfword opcode);
+  bool handleOpcode7(halfword opcode);
+  bool handleOpcode8(halfword opcode);
+  bool handleOpcode9(halfword opcode);
+  bool handleOpcodeA(halfword opcode);
+  bool handleOpcodeB(halfword opcode);
+  bool handleOpcodeC(halfword opcode);
+  bool handleOpcodeD(halfword opcode);
+  bool handleOpcodeE(halfword opcode);
+  bool handleOpcodeF(halfword opcode);
 
   // Returns part of the opcode value where opcode looks like this:
   // 0xWXYZ or 0x0NNN or 0x00NN
