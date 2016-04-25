@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 # Tests. Turn on with 'cmake -Dtest=ON'.
 option(test "Build all tests." OFF)
 if (test)
+  message(STATUS "Tests enabled")
   add_subdirectory(lib/googletest)
   enable_testing()
   include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
@@ -26,3 +26,11 @@ set(PROJECT_SOURCE_DIR src)
 
 include_directories(${chip8core_SOURCE_DIR}/include)
 add_library(${PROJECT_NAME} src/Emulator.cc)
+
+# Extra tools. Turn on with 'cmake -Dtools=ON'.
+option(tools "Build all extra tools." OFF)
+if (tools)
+  message(STATUS "Tools enabled")
+  add_executable(decompiler src/decompiler.cc)
+endif()
+
