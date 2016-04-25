@@ -68,6 +68,12 @@ bool ifn() {
          get_nn("IFN", nn) &&
          write_bins(0x30 + xreg, nn);
 }
+bool if_() {
+  char xreg, nn;
+  return get_x("IF", xreg) &&
+         get_nn("IF", nn) &&
+         write_bins(0x40 + xreg, nn);
+}
 
 map<string const, function<bool()>> const op2fun {
   {"CLS",  cls},
@@ -75,6 +81,7 @@ map<string const, function<bool()>> const op2fun {
   {"JMP",  jmp},
   {"CALL", call},
   {"IFN",  ifn},
+  {"IF",   if_},
 };
 
 int help(string program_name) {
@@ -85,7 +92,8 @@ int help(string program_name) {
     << "RET       - 0x00EE\n"
     << "JMP NNN   - 0x1NNN\n"
     << "CALL NNN  - 0x2NNN\n"
-    << "IFN X NN  - 0x3XNN\n";
+    << "IFN X NN  - 0x3XNN\n"
+    << "IF X NN   - 0x4XNN\n";
 
   return 1;
 }
