@@ -97,24 +97,6 @@ void tok2reg_or_nn(string const& name, string&& value, char& reg_or_nn, io::toke
 
 } // io
 
-int help(string program_name) {
-  cerr
-    << "Usage: " << program_name << " FILE\n\n"
-    << "Available commands\n"
-    << "CLS        - 0x00E0\n"
-    << "RET        - 0x00EE\n"
-    << "JMP NNN    - 0x1NNN\n"
-    << "CALL NNN   - 0x2NNN\n"
-    << "IFN rX NN  - 0x3XNN\n"
-    << "IF rX NN   - 0x4XNN\n"
-    << "IFN rX rY  - 0x5XY0\n"
-    << "SET rX NN  - 0x6XNN\n"
-    << "ADD rX NN  - 0x7XNN\n"
-    << "SET rX rY  - 0x8XY0\n";
-
-  return 1;
-}
-
 namespace op {
 
 // These variables are shared between all below functions
@@ -172,7 +154,47 @@ void ADD() {
   io::write_bins(0x70 + lhs, rhs);
 }
 
+void OR() {
+  io::tok2reg("OR", io::next_token(), lhs);
+  io::tok2reg("OR", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, rhs + 0x01);
+}
+
+void AND() {
+  io::tok2reg("AND", io::next_token(), lhs);
+  io::tok2reg("AND", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, rhs + 0x02);
+}
+
+void XOR() {
+  io::tok2reg("XOR", io::next_token(), lhs);
+  io::tok2reg("XOR", io::next_token(), rhs);
+  io::write_bins(0x80 + lhs, rhs + 0x03);
+}
+
 } // op
+
+
+int help(string program_name) {
+  cerr
+    << "Usage: " << program_name << " FILE\n\n"
+    << "Available commands\n"
+    << "CLS          - 0x00E0\n"
+    << "RET          - 0x00EE\n"
+    << "JMP  NNN     - 0x1NNN\n"
+    << "CALL NNN     - 0x2NNN\n"
+    << "IFN  rX  NN  - 0x3XNN\n"
+    << "IF   rX  NN  - 0x4XNN\n"
+    << "IFN  rX  rY  - 0x5XY0\n"
+    << "SET  rX  NN  - 0x6XNN\n"
+    << "ADD  rX  NN  - 0x7XNN\n"
+    << "SET  rX  rY  - 0x8XY0\n"
+    << "OR   rX  rY  - 0x8XY1\n"
+    << "AND  rX  rY  - 0x8XY2\n"
+    << "XOR  rX  rY  - 0x8XY3\n";
+
+  return 1;
+}
 
 
 } // anonymous namespace
@@ -206,6 +228,9 @@ int main(int argc, char* argv[]) {
     {"IF",   op::IF},
     {"SET",  op::SET},
     {"ADD",  op::ADD},
+    {"OR",   op::OR},
+    {"AND",  op::AND},
+    {"XOR",  op::XOR},
   };
 
 
