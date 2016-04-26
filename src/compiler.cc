@@ -130,49 +130,34 @@ void CALL() {
 void IFN() {
   io::tok2reg("IFN", io::next_token(), lhs);
   io::tok2reg_or_nn("IFN", io::next_token(), rhs, t);
-  if (t == io::NN) {
-    io::write_bins(0x30 + lhs, rhs);
-  } else if (t == io::REG) {
-    io::write_bins(0x50 + lhs, rhs << 4);
-  } else {
-    io::exit_err("IFN: Unknown type\n");
-  }
+  if (t == io::NN)       { io::write_bins(0x30 + lhs, rhs); }
+  else if (t == io::REG) { io::write_bins(0x50 + lhs, rhs << 4); }
+  else                   { io::exit_err("IFN: Unknown type\n"); }
 }
 
 void IF() {
   io::tok2reg("IF", io::next_token(), lhs);
   io::tok2reg_or_nn("IF", io::next_token(), rhs, t);
-  if (t == io::NN) {
-    io::write_bins(0x40 + lhs, rhs);
-  } else if (t == io::REG) {
-    io::write_bins(0x90 + lhs, (rhs << 4) + 0x04);
-  } else {
-    io::exit_err("IF: Unknown type\n");
-  }
+  if (t == io::NN)       { io::write_bins(0x40 + lhs, rhs); }
+  else if (t == io::REG) { io::write_bins(0x90 + lhs, (rhs << 4) + 0x04); }
+  else                   { io::exit_err("IF: Unknown type\n"); }
 }
 
 void SET() {
   io::tok2reg("SET", io::next_token(), lhs);
   io::tok2reg_or_nn("SET", io::next_token(), rhs, t);
-  if (t == io::NN) {
-    io::write_bins(0x60 + lhs, rhs);
-  } else if (t == io::REG) {
-    io::write_bins(0x80 + lhs, rhs << 4);
-  } else {
-    io::exit_err("SET: Unknown type\n");
+  if (t == io::NN)       { io::write_bins(0x60 + lhs, rhs); }
+  else if (t == io::REG) { io::write_bins(0x80 + lhs, rhs << 4); }
+  else                   { io::exit_err("SET: Unknown type\n");
   }
 }
 
 void ADD() {
   io::tok2reg("ADD", io::next_token(), lhs);
   io::tok2reg_or_nn("ADD", io::next_token(), rhs, t);
-  if (t == io::NN) {
-    io::write_bins(0x70 + lhs, rhs);
-  } else if (t == io::REG) {
-    io::write_bins(0x80 + lhs, (rhs << 4) + 0x04);
-  } else {
-    io::exit_err("ADD: Unknown type\n");
-  }
+  if (t == io::NN)       { io::write_bins(0x70 + lhs, rhs); }
+  else if (t == io::REG) { io::write_bins(0x80 + lhs, (rhs << 4) + 0x04); }
+  else                   { io::exit_err("ADD: Unknown type\n"); }
 }
 
 void OR() {
