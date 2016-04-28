@@ -201,13 +201,13 @@ void describe_opcode(int line, int opcode) {
             break;
 
           case 0xF055:
-            cout << "STORE data from reg[" << hex << op_x_value(opcode)
-                 << "] -> reg[" << hex << op_y_value(opcode) << "] to I";
+            cout << "STORE data from reg[0] - reg[" << hex << op_x_value(opcode)
+                 << "] to I";
             break;
 
           case 0xF065:
-            cout << "LOAD data from I to reg[" << hex << op_x_value(opcode)
-                 << "] -> reg[" << hex << op_y_value(opcode) << "]";
+            cout << "LOAD data from I to reg[0] - reg[" << hex << op_x_value(opcode)
+                 << "]";
             break;
 
           default:
