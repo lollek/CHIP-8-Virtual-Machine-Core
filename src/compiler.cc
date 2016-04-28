@@ -135,6 +135,11 @@ inline void RR(string const& name, char lop, char rop) {
   io::write_bins(lop + lhs, (rhs << 4) + rop);
 }
 
+inline void N(string const& name, char lop, char rop) {
+  io::tok2n(name, io::next_token(), lhs);
+  io::write_bins(lop + lhs, rop);
+}
+
 inline void NNN(string const& name, char op) {
   io::tok2nnn(name, io::next_token(), lhs, rhs);
   io::write_bins(op + lhs, rhs);
@@ -205,8 +210,8 @@ int help(string program_name) {
     << "IADD rX      - 0xFX1E\n"
     << "CHAR rX      - 0xFX29\n"
     << "SEP  rX      - 0xFX33\n"
-    << "STOR rX      - 0xFX55\n"
-    << "LOAD rX      - 0xFX65\n"
+    << "STOR N       - 0xFX55\n"
+    << "LOAD N       - 0xFX65\n"
     << "DATA NNNN    - 0xNNNN\n"
     << "; comment with semicolon\n";
 
@@ -265,8 +270,8 @@ int main(int argc, char* argv[]) {
     {"IADD", bind(op::R,   "IADD", 0xF0, 0x1E)},
     {"CHAR", bind(op::R,   "CHAR", 0xF0, 0x29)},
     {"SEP",  bind(op::R,    "SEP", 0xF0, 0x33)},
-    {"STOR", bind(op::R,   "STOR", 0xF0, 0x55)},
-    {"LOAD", bind(op::R,   "LOAD", 0xF0, 0x65)},
+    {"STOR", bind(op::N,   "STOR", 0xF0, 0x55)},
+    {"LOAD", bind(op::N,   "LOAD", 0xF0, 0x65)},
     {"DATA", bind(op::DATA,"DATA")},
   };
 
