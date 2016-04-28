@@ -225,6 +225,61 @@ void DRAW() {
   io::write_bins(0xD0 + lhs, (rhs << 4) + rhs2);
 }
 
+void IFK() {
+  io::tok2reg("IFK", io::next_token(), lhs);
+  io::write_bins(0xE0 + lhs, 0x9E);
+}
+
+void IFNK() {
+  io::tok2reg("IFNK", io::next_token(), lhs);
+  io::write_bins(0xE0 + lhs, 0xA1);
+}
+
+void GDEL() {
+  io::tok2reg("GDEL", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x07);
+}
+
+void WKEY() {
+  io::tok2reg("WKEY", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x0A);
+}
+
+void SDEL() {
+  io::tok2reg("SDEL", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x15);
+}
+
+void SAUD() {
+  io::tok2reg("SAUD", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x18);
+}
+
+void IADD() {
+  io::tok2reg("IADD", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x1E);
+}
+
+void CHAR() {
+  io::tok2reg("CHAR", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x29);
+}
+
+void SEP() {
+  io::tok2reg("SEP", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x33);
+}
+
+void STOR() {
+  io::tok2reg("STOR", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x55);
+}
+
+void LOAD() {
+  io::tok2reg("LOAD", io::next_token(), lhs);
+  io::write_bins(0xF0 + lhs, 0x65);
+}
+
 } // op
 
 
@@ -254,7 +309,18 @@ int help(string program_name) {
     << "IDX  NNN     - 0xANNN\n"
     << "JMP0 NNN     - 0xBNNN\n"
     << "RND  rX NN   - 0xCXNN\n"
-    << "DRAW rX rY N - 0xDXYN\n";
+    << "DRAW rX rY N - 0xDXYN\n"
+    << "IFK  rX      - 0xEX9E\n"
+    << "IFNK rX      - 0xEXA1\n"
+    << "GDEL rX      - 0xFX07\n"
+    << "WKEY rX      - 0xFX0A\n"
+    << "SDEL rX      - 0xFX15\n"
+    << "SAUD rX      - 0xFX18\n"
+    << "IADD rX      - 0xFX1E\n"
+    << "CHAR rX      - 0xFX29\n"
+    << "SEP  rX      - 0xFX33\n"
+    << "STOR rX  rY  - 0xFX55\n"
+    << "LOAD rX  rY  - 0xFX65\n";
 
   return 1;
 }
@@ -302,6 +368,17 @@ int main(int argc, char* argv[]) {
     {"JMP0", op::JMP0},
     {"RND",  op::RND},
     {"DRAW", op::DRAW},
+    {"IFK",  op::IFK},
+    {"IFNK", op::IFNK},
+    {"GDEL", op::GDEL},
+    {"WKEY", op::WKEY},
+    {"SDEL", op::SDEL},
+    {"SAUD", op::SAUD},
+    {"IADD", op::IADD},
+    {"CHAR", op::CHAR},
+    {"SEP",  op::SEP},
+    {"STOR", op::STOR},
+    {"LOAD", op::LOAD},
   };
 
 
