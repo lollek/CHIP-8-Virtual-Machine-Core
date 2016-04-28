@@ -273,8 +273,9 @@ int main(int argc, char* argv[]) {
 
   for (;;) {
     // This constructor will exit when no more input is received
-    string const tok{io::next_token()};
+    string tok{io::next_token()};
     if (tok.at(0) == ';') {
+      getline(io::infile, tok);
       continue;
     }
 
