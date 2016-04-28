@@ -81,6 +81,15 @@ void tok2nnn(string const& name, string&& value, char& lhs, char& rhs) {
   rhs = target & 0xFF;
 }
 
+void tok2nnnn(string const& name, string&& value, char& lhs, char& rhs) {
+  int target = xtoi(value);
+  if (0 > target || 0xFFFF < target) {
+    exit_err("Error: " + name + " needs to be supplied with a value [0-FFFF]\n");
+  }
+  lhs = target >> 8;
+  rhs = target & 0xFF;
+}
+
 void tok2reg(string const& name, string&& value, char& reg) {
   if (value.at(0) != 'r') {
     exit_err("Error: " + name + " needs to be supplied with a register r[0-F]\n");
@@ -152,6 +161,11 @@ inline void RV(string const& name, char nnop, char rlop, char rrop) {
   else                   { io::exit_err(name + ": Unknown type\n"); }
 }
 
+inline void DATA(string const& name) {
+  io::tok2nnnn(name, io::next_token(), lhs, rhs);
+  io::write_bins(lhs, rhs);
+}
+
 } // op
 
 
@@ -192,7 +206,9 @@ int help(string program_name) {
     << "CHAR rX      - 0xFX29\n"
     << "SEP  rX      - 0xFX33\n"
     << "STOR rX      - 0xFX55\n"
-    << "LOAD rX      - 0xFX65\n";
+    << "LOAD rX      - 0xFX65\n"
+    << "DATA NNNN    - 0xNNNN\n"
+    << "; comment with semicolon\n";
 
   return 1;
 }
@@ -251,12 +267,16 @@ int main(int argc, char* argv[]) {
     {"SEP",  bind(op::R,   "SEP", 0xF0, 0x33)},
     {"STOR", bind(op::R,  "STOR", 0xF0, 0x55)},
     {"LOAD", bind(op::R,  "LOAD", 0xF0, 0x65)},
+    {"DATA",  bind(op::DATA, "DATA")},
   };
 
 
   for (;;) {
     // This constructor will exit when no more input is received
     string const tok{io::next_token()};
+    if (tok.at(0) == ';') {
+      continue;
+    }
 
     auto const fun{op2fun.find(tok)};
     if (fun == op2fun.end()) {
