@@ -113,171 +113,43 @@ char rhs;
 char rhs2;
 io::token_type t;
 
-void CLS() { io::write_bins(0x00, 0xE0); }
+inline void OP(char lhs, char rhs) { io::write_bins(lhs, rhs); }
 
-void RET() { io::write_bins(0x00, 0xEE); }
-
-void JMP() {
-  io::tok2nnn("JMP", io::next_token(), lhs, rhs);
-  io::write_bins(0x10 + lhs, rhs);
+inline void R(string const& name, char lop, char rop) {
+  io::tok2reg(name, io::next_token(), lhs);
+  io::write_bins(lop + lhs, rop);
 }
 
-void CALL() {
-  io::tok2nnn("CALL", io::next_token(), lhs, rhs);
-  io::write_bins(0x20 + lhs, rhs);
+inline void RR(string const& name, char lop, char rop) {
+  io::tok2reg(name, io::next_token(), lhs);
+  io::tok2reg(name, io::next_token(), rhs);
+  io::write_bins(lop + lhs, (rhs << 4) + rop);
 }
 
-void IFN() {
-  io::tok2reg("IFN", io::next_token(), lhs);
-  io::tok2reg_or_nn("IFN", io::next_token(), rhs, t);
-  if (t == io::NN)       { io::write_bins(0x30 + lhs, rhs); }
-  else if (t == io::REG) { io::write_bins(0x50 + lhs, rhs << 4); }
-  else                   { io::exit_err("IFN: Unknown type\n"); }
+inline void NNN(string const& name, char op) {
+  io::tok2nnn(name, io::next_token(), lhs, rhs);
+  io::write_bins(op + lhs, rhs);
 }
 
-void IF() {
-  io::tok2reg("IF", io::next_token(), lhs);
-  io::tok2reg_or_nn("IF", io::next_token(), rhs, t);
-  if (t == io::NN)       { io::write_bins(0x40 + lhs, rhs); }
-  else if (t == io::REG) { io::write_bins(0x90 + lhs, (rhs << 4) + 0x04); }
-  else                   { io::exit_err("IF: Unknown type\n"); }
+inline void RNN(string const& name, char lop) {
+  io::tok2reg(name, io::next_token(), lhs);
+  io::tok2nn(name, io::next_token(), rhs);
+  io::write_bins(lop + lhs, rhs);
 }
 
-void SET() {
-  io::tok2reg("SET", io::next_token(), lhs);
-  io::tok2reg_or_nn("SET", io::next_token(), rhs, t);
-  if (t == io::NN)       { io::write_bins(0x60 + lhs, rhs); }
-  else if (t == io::REG) { io::write_bins(0x80 + lhs, rhs << 4); }
-  else                   { io::exit_err("SET: Unknown type\n");
-  }
+inline void RRN(string const& name, char lop) {
+  io::tok2reg(name, io::next_token(), lhs);
+  io::tok2reg(name, io::next_token(), rhs);
+  io::tok2n(name, io::next_token(), rhs2);
+  io::write_bins(lop + lhs, (rhs << 4) + rhs2);
 }
 
-void ADD() {
-  io::tok2reg("ADD", io::next_token(), lhs);
-  io::tok2reg_or_nn("ADD", io::next_token(), rhs, t);
-  if (t == io::NN)       { io::write_bins(0x70 + lhs, rhs); }
-  else if (t == io::REG) { io::write_bins(0x80 + lhs, (rhs << 4) + 0x04); }
-  else                   { io::exit_err("ADD: Unknown type\n"); }
-}
-
-void OR() {
-  io::tok2reg("OR", io::next_token(), lhs);
-  io::tok2reg("OR", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x01);
-}
-
-void AND() {
-  io::tok2reg("AND", io::next_token(), lhs);
-  io::tok2reg("AND", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x02);
-}
-
-void XOR() {
-  io::tok2reg("XOR", io::next_token(), lhs);
-  io::tok2reg("XOR", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x03);
-}
-
-void SUB() {
-  io::tok2reg("SUB", io::next_token(), lhs);
-  io::tok2reg("SUB", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x05);
-}
-
-void SHR() {
-  io::tok2reg("SHR", io::next_token(), lhs);
-  io::tok2reg("SHR", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x06);
-}
-
-void RSUB() {
-  io::tok2reg("RSUB", io::next_token(), lhs);
-  io::tok2reg("RSUB", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x07);
-}
-
-void SHL() {
-  io::tok2reg("SHL", io::next_token(), lhs);
-  io::tok2reg("SHL", io::next_token(), rhs);
-  io::write_bins(0x80 + lhs, (rhs << 4) + 0x0E);
-}
-
-void IDX() {
-  io::tok2nnn("IDX", io::next_token(), lhs, rhs);
-  io::write_bins(0xA0 + lhs, rhs);
-}
-
-void JMP0() {
-  io::tok2nnn("JMP0", io::next_token(), lhs, rhs);
-  io::write_bins(0xB0 + lhs, rhs);
-}
-
-void RND() {
-  io::tok2reg("RND", io::next_token(), lhs);
-  io::tok2nn("RND", io::next_token(), rhs);
-  io::write_bins(0xC0 + lhs, rhs);
-}
-
-void DRAW() {
-  io::tok2reg("DRAW", io::next_token(), lhs);
-  io::tok2reg("DRAW", io::next_token(), rhs);
-  io::tok2n("DRAW", io::next_token(), rhs2);
-  io::write_bins(0xD0 + lhs, (rhs << 4) + rhs2);
-}
-
-void IFK() {
-  io::tok2reg("IFK", io::next_token(), lhs);
-  io::write_bins(0xE0 + lhs, 0x9E);
-}
-
-void IFNK() {
-  io::tok2reg("IFNK", io::next_token(), lhs);
-  io::write_bins(0xE0 + lhs, 0xA1);
-}
-
-void GDEL() {
-  io::tok2reg("GDEL", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x07);
-}
-
-void WKEY() {
-  io::tok2reg("WKEY", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x0A);
-}
-
-void SDEL() {
-  io::tok2reg("SDEL", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x15);
-}
-
-void SAUD() {
-  io::tok2reg("SAUD", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x18);
-}
-
-void IADD() {
-  io::tok2reg("IADD", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x1E);
-}
-
-void CHAR() {
-  io::tok2reg("CHAR", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x29);
-}
-
-void SEP() {
-  io::tok2reg("SEP", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x33);
-}
-
-void STOR() {
-  io::tok2reg("STOR", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x55);
-}
-
-void LOAD() {
-  io::tok2reg("LOAD", io::next_token(), lhs);
-  io::write_bins(0xF0 + lhs, 0x65);
+inline void RV(string const& name, char nnop, char rlop, char rrop) {
+  io::tok2reg(name, io::next_token(), lhs);
+  io::tok2reg_or_nn(name, io::next_token(), rhs, t);
+  if (t == io::NN)       { io::write_bins(nnop + lhs, rhs); }
+  else if (t == io::REG) { io::write_bins(rlop + lhs, (rhs << 4) + rrop); }
+  else                   { io::exit_err(name + ": Unknown type\n"); }
 }
 
 } // op
@@ -319,8 +191,8 @@ int help(string program_name) {
     << "IADD rX      - 0xFX1E\n"
     << "CHAR rX      - 0xFX29\n"
     << "SEP  rX      - 0xFX33\n"
-    << "STOR rX  rY  - 0xFX55\n"
-    << "LOAD rX  rY  - 0xFX65\n";
+    << "STOR rX      - 0xFX55\n"
+    << "LOAD rX      - 0xFX65\n";
 
   return 1;
 }
@@ -349,36 +221,36 @@ int main(int argc, char* argv[]) {
   }
 
   map<string const, function<void()>> const op2fun {
-    {"CLS",  op::CLS},
-    {"RET",  op::RET},
-    {"JMP",  op::JMP},
-    {"CALL", op::CALL},
-    {"IFN",  op::IFN},
-    {"IF",   op::IF},
-    {"SET",  op::SET},
-    {"ADD",  op::ADD},
-    {"OR",   op::OR},
-    {"AND",  op::AND},
-    {"XOR",  op::XOR},
-    {"SUB",  op::SUB},
-    {"SHR",  op::SHR},
-    {"RSUB", op::RSUB},
-    {"SHL",  op::SHL},
-    {"IDX",  op::IDX},
-    {"JMP0", op::JMP0},
-    {"RND",  op::RND},
-    {"DRAW", op::DRAW},
-    {"IFK",  op::IFK},
-    {"IFNK", op::IFNK},
-    {"GDEL", op::GDEL},
-    {"WKEY", op::WKEY},
-    {"SDEL", op::SDEL},
-    {"SAUD", op::SAUD},
-    {"IADD", op::IADD},
-    {"CHAR", op::CHAR},
-    {"SEP",  op::SEP},
-    {"STOR", op::STOR},
-    {"LOAD", op::LOAD},
+    {"CLS",  bind(op::OP,   0x00, 0xE0) },
+    {"RET",  bind(op::OP,   0x00, 0xEE) },
+    {"JMP",  bind(op::NNN, "JMP", 0x10)},
+    {"CALL", bind(op::NNN,"CALL", 0x20)},
+    {"IFN",  bind(op::RV,  "IFN", 0x30, 0x50, 0x00)},
+    {"IF",   bind(op::RV,  "IFN", 0x40, 0x90, 0x00)},
+    {"SET",  bind(op::RV,  "IFN", 0x60, 0x80, 0x00)},
+    {"ADD",  bind(op::RV,  "IFN", 0x70, 0x80, 0x04)},
+    {"OR",   bind(op::RR,   "OR", 0x80, 0x01)},
+    {"AND",  bind(op::RR,  "AND", 0x80, 0x02)},
+    {"XOR",  bind(op::RR,  "XOR", 0x80, 0x03)},
+    {"SUB",  bind(op::RR,  "SUB", 0x80, 0x05)},
+    {"SHR",  bind(op::RR,  "SHR", 0x80, 0x06)},
+    {"RSUB", bind(op::RR, "RSUB", 0x80, 0x07)},
+    {"SHL",  bind(op::RR,  "SHL", 0x80, 0x0E)},
+    {"IDX",  bind(op::NNN, "IDX", 0xA0)},
+    {"JMP0", bind(op::NNN,"JMP0", 0xB0)},
+    {"RND",  bind(op::RNN, "RND", 0xC0)},
+    {"DRAW", bind(op::RRN,"DRAW", 0xD0)},
+    {"IFK",  bind(op::R,   "IFK", 0xE0, 0x9E)},
+    {"IFNK", bind(op::R,  "IFNK", 0xE0, 0xA1)},
+    {"GDEL", bind(op::R,  "GDEL", 0xF0, 0x07)},
+    {"WKEY", bind(op::R,  "WKEY", 0xF0, 0x0A)},
+    {"SDEL", bind(op::R,  "SDEL", 0xF0, 0x15)},
+    {"SAUD", bind(op::R,  "SAUD", 0xF0, 0x18)},
+    {"IADD", bind(op::R,  "IADD", 0xF0, 0x1E)},
+    {"CHAR", bind(op::R,  "CHAR", 0xF0, 0x29)},
+    {"SEP",  bind(op::R,   "SEP", 0xF0, 0x33)},
+    {"STOR", bind(op::R,  "STOR", 0xF0, 0x55)},
+    {"LOAD", bind(op::R,  "LOAD", 0xF0, 0x65)},
   };
 
 
